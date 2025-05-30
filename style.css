@@ -9,7 +9,6 @@ body {
 
 h1 {
   color: #ffcc00;
-  margin-bottom: 10px;
 }
 
 .container {
@@ -22,36 +21,25 @@ h1 {
 }
 
 .balance {
-  font-size: 1.2em;
   margin-bottom: 15px;
 }
 
 .slot-machine {
   display: flex;
-  justify-content: space-around;
-  margin-bottom: 15px;
+  justify-content: space-between;
+  margin: 20px 0;
 }
 
-.slot {
+.reel {
   width: 60px;
   height: 60px;
-  background: rgba(255,255,255,0.2);
   border-radius: 10px;
+  background: rgba(255,255,255,0.2);
   font-size: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.2s;
-}
-
-.slot.spin {
-  animation: spinAnim 0.2s infinite linear;
-}
-
-@keyframes spinAnim {
-  0% { transform: rotateX(0deg); }
-  50% { transform: rotateX(90deg); }
-  100% { transform: rotateX(180deg); }
+  transition: transform 0.5s ease;
 }
 
 #spinBtn {
