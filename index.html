@@ -1,31 +1,26 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <title>Кликер Бандита</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dog House Casino 🎰</title>
+<link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="app">
-    <div class="screen" id="screen1">
-      <h1>Кликер Бандита 💰</h1>
-      <div class="balance">Баланс: <span id="balance">0</span>💰</div>
-      <button id="clickBtn">Клик!</button>
+  <div class="container">
+    <h1>Dog House Casino 🏠</h1>
+    <div class="balance">Баланс: <span id="balance">1000</span>💰</div>
+
+    <div class="slot-machine">
+      <div class="slot" id="slot1">🐶</div>
+      <div class="slot" id="slot2">🦴</div>
+      <div class="slot" id="slot3">🐾</div>
     </div>
-    <div class="screen" id="screen2">
-      <h1>Улучшения ⚙️</h1>
-      <div id="upgrades"></div>
-    </div>
-    <div class="screen" id="screen3">
-      <h1>Статистика 📊</h1>
-      <p>Всего кликов: <span id="totalClicks">0</span></p>
-      <p>Пассивный доход: <span id="passiveIncome">0</span>💰/сек</p>
-    </div>
-    <div class="nav">
-      <button id="prevBtn">⬅️</button>
-      <button id="nextBtn">➡️</button>
-    </div>
+
+    <button id="spinBtn">Крутить 🎰</button>
+    <div id="message" class="message"></div>
   </div>
+
   <script src="script.js"></script>
 </body>
 </html>
