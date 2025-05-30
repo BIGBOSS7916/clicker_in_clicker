@@ -1,42 +1,67 @@
-const tg = window.Telegram.WebApp;
-tg.expand(); // полноэкранный режим
-
-let balance = 0;
-let clickValue = 1;
-let upgradeCost = 10;
-
-// обновляем баланс
-function updateBalance() {
-  document.getElementById('balance').innerText = Баланс: ${balance};
+body {
+  font-family: 'Arial', sans-serif;
+  background: linear-gradient(135deg, #232526, #414345);
+  color: #fff;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
 }
 
-// кнопка "Клик!"
-document.getElementById('clickBtn').addEventListener('click', () => {
-  balance += clickValue;
-  updateBalance();
-});
+.app {
+  background: rgba(0,0,0,0.6);
+  border-radius: 10px;
+  padding: 20px;
+  width: 300px;
+  text-align: center;
+  position: relative;
+}
 
-// кнопка "Улучшение"
-document.getElementById('upgradeBtn').addEventListener('click', () => {
-  if (balance >= upgradeCost) {
-    balance -= upgradeCost;
-    clickValue += 1;
-    upgradeCost *= 2; // стоимость удваивается
-    document.getElementById('upgradeBtn').innerText = Купить улучшение (${upgradeCost} монет);
-    updateBalance();
-  } else {
-    alert('Не хватает монет!');
-  }
-});
+h1 {
+  margin-top: 0;
+}
 
-// кнопка "Вывод"
-document.getElementById('withdrawBtn').addEventListener('click', () => {
-  const data = {
-    action: 'withdraw',
-    amount: balance
-  };
-  tg.sendData(JSON.stringify(data)); // отправляем данные боту
-  alert('Заявка на вывод отправлена!');
-  balance = 0; // обнуляем баланс
-  updateBalance();
-});
+button {
+  background: #ff9800;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 15px;
+  margin: 5px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+button:hover {
+  background: #e65100;
+}
+
+.balance {
+  margin: 10px 0;
+  font-size: 18px;
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+}
+
+.screen {
+  display: none;
+}
+
+.screen.active {
+  display: block;
+}
+
+.upgrade {
+  background: #333;
+  margin: 5px 0;
+  padding: 5px;
+  border-radius: 5px;
+}
+
+.upgrade button {
+  margin-left: 10px;
+}
