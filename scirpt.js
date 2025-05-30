@@ -6,10 +6,7 @@ const spinButton = document.getElementById("spin-btn");
 function spin() {
   spinButton.disabled = true;
   resultBox.textContent = "🎰 Крутим...";
-
-  let spins = 30; // количество "крутых" циклов
-  let spinSpeed = 50; // скорость анимации
-
+  let totalSpins = 30;
   const interval = setInterval(() => {
     reels.forEach(reel => {
       reel.innerHTML = "";
@@ -21,16 +18,15 @@ function spin() {
         reel.appendChild(symbolDiv);
       }
     });
-    spins--;
-    if (spins === 0) {
+    totalSpins--;
+    if (totalSpins === 0) {
       clearInterval(interval);
       finalizeSpin();
     }
-  }, spinSpeed);
+  }, 50);
 }
 
 function finalizeSpin() {
-  // Генерация итогового результата
   reels.forEach(reel => {
     reel.innerHTML = "";
     for (let i = 0; i < 3; i++) {
@@ -41,11 +37,8 @@ function finalizeSpin() {
       reel.appendChild(symbolDiv);
     }
   });
-
   resultBox.textContent = "✅ Спин завершён!";
   spinButton.disabled = false;
-
-  // 👉 Здесь можно вставить логику расчёта выигрыша
 }
 
 spinButton.addEventListener("click", spin);
