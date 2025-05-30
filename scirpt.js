@@ -1,86 +1,60 @@
-let balance = 0;
-let passiveIncome = 0;
-let totalClicks = 0;
-
-const upgradesData = [
-  { name: "Курсор", price: 10, income: 1 },
-  { name: "Ассистент", price: 100, income: 5 },
-  { name: "Ферма", price: 1000, income: 50 },
-];
-
 const balanceEl = document.getElementById("balance");
-const clickBtn = document.getElementById("clickBtn");
-const upgradesEl = document.getElementById("upgrades");
-const totalClicksEl = document.getElementById("totalClicks");
-const passiveIncomeEl = document.getElementById("passiveIncome");
+const slotEls = [document.getElementById("slot1"), document.getElementById("slot2"), document.getElementById("slot3")];
+const spinBtn = document.getElementById("spinBtn");
+const messageEl = document.getElementById("message");
 
-// Инициализация улучшений
-function initUpgrades() {
-  upgradesEl.innerHTML = "";
-  upgradesData.forEach((upg, idx) => {
-    const div = document.createElement("div");
-    div.classList.add("upgrade");
-    div.innerHTML = `
-      ${upg.name} — ${upg.price}💰 (+${upg.income}/сек)
-      <button onclick="buyUpgrade(${idx})">Купить</button>
-    `;
-    upgradesEl.appendChild(div);
-  });
-}
+let balance = 1000;
+const bet = 100;
+const symbols = ["🐶", "🦴", "🐾", "🐕", "🐩", "💎", "7️⃣"];
 
-// Кликер
-clickBtn.addEventListener("click", () => {
-  balance += 1;
-  totalClicks += 1;
-  updateUI();
-});
+spinBtn.addEventListener("click", spin);
 
-// Купить улучшение
-function buyUpgrade(idx) {
-  const upg = upgradesData[idx];
-  if (balance >= upg.price) {
-    balance -= upg.price;
-    passiveIncome += upg.income;
-    upg.price = Math.floor(upg.price * 1.5); // Увеличиваем цену
-    initUpgrades();
-    updateUI();
-  } else {
-    alert("Недостаточно 💰!");
+function spin() {
+  if (balance < bet) {
+    messageEl.textContent = "Недостаточно средств!";
+    return;
   }
+
+  balance -= bet;
+  updateBalance();
+  messageEl.textContent = "";
+
+  let spins = 15;
+  let count = 0;
+
+  const spinInterval = setInterval(() => {
+    for (let i = 0; i < 3; i++) {
+      const randIndex = Math.floor(Math.random() * symbols.length);
+      slotEls[i].textContent = symbols[randIndex];
+      slotEls[i].classList.add("spin");
+    }
+    count++;
+    if (count >= spins) {
+      clearInterval(spinInterval);
+      for (let el of slotEls) el.classList.remove("spin");
+      checkWin();
+    }
+  }, 80);
 }
 
-// Пассивный доход
-setInterval(() => {
-  balance += passiveIncome;
-  updateUI();
-}, 1000);
+function checkWin() {
+  const [a, b, c] = slotEls.map(el => el.textContent);
 
-// Обновить UI
-function updateUI() {
+  if (a === b && b === c) {
+    const win = bet * 10;
+    balance += win;
+    messageEl.textContent = 🎉 Джекпот! +${win}💰;
+  } else if (a === b  b === c  a === c) {
+    const win = bet * 2;
+    balance += win;
+    messageEl.textContent = ✨ Две совпали! +${win}💰;
+  } else {
+    messageEl.textContent = "❌ Не повезло!";
+  }
+
+  updateBalance();
+}
+
+function updateBalance() {
   balanceEl.textContent = balance;
-  totalClicksEl.textContent = totalClicks;
-  passiveIncomeEl.textContent = passiveIncome;
 }
-
-// Переключение экранов
-let currentScreen = 0;
-const screens = document.querySelectorAll(".screen");
-document.getElementById("prevBtn").addEventListener("click", () => {
-  currentScreen = (currentScreen - 1 + screens.length) % screens.length;
-  showScreen();
-});
-document.getElementById("nextBtn").addEventListener("click", () => {
-  currentScreen = (currentScreen + 1) % screens.length;
-  showScreen();
-});
-
-function showScreen() {
-  screens.forEach((s, i) => {
-    s.classList.toggle("active", i === currentScreen);
-  });
-}
-
-// Запуск
-initUpgrades();
-updateUI();
-showScreen();
