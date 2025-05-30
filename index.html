@@ -1,20 +1,31 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Кликер Бота Бандита</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <meta charset="UTF-8" />
+  <title>Кликер Бандита</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Кликер Бота Бандита</h1>
-  <div id="balance">Баланс: 0</div>
-  <button id="clickBtn">Клик!</button>
-  <h3>Улучшения</h3>
-  <button id="upgradeBtn">Купить улучшение (10 монет)</button>
-  <br><br>
-  <button id="withdrawBtn">Вывести деньги</button>
-
+  <div class="app">
+    <div class="screen" id="screen1">
+      <h1>Кликер Бандита 💰</h1>
+      <div class="balance">Баланс: <span id="balance">0</span>💰</div>
+      <button id="clickBtn">Клик!</button>
+    </div>
+    <div class="screen" id="screen2">
+      <h1>Улучшения ⚙️</h1>
+      <div id="upgrades"></div>
+    </div>
+    <div class="screen" id="screen3">
+      <h1>Статистика 📊</h1>
+      <p>Всего кликов: <span id="totalClicks">0</span></p>
+      <p>Пассивный доход: <span id="passiveIncome">0</span>💰/сек</p>
+    </div>
+    <div class="nav">
+      <button id="prevBtn">⬅️</button>
+      <button id="nextBtn">➡️</button>
+    </div>
+  </div>
   <script src="script.js"></script>
 </body>
 </html>
