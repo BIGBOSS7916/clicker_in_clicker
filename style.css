@@ -1,63 +1,73 @@
 body {
-  font-family: "Comic Sans MS", cursive, sans-serif;
-  background: #4d1a07;
-  color: #fff;
-  text-align: center;
   margin: 0;
-  padding: 20px;
-}
-
-h1 {
-  color: #ffcc00;
+  font-family: Arial, sans-serif;
+  background: #2b1a0f;
+  color: #f5c16c;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
 }
 
 .container {
-  max-width: 400px;
-  margin: auto;
-  background: #2e0900;
-  border-radius: 15px;
-  padding: 20px;
-  box-shadow: 0 0 15px rgba(0,0,0,0.5);
+  text-align: center;
 }
 
-.balance {
-  margin-bottom: 15px;
+h1 {
+  margin-bottom: 20px;
+  color: #ffd700;
 }
 
-.slot-machine {
+#slot-machine {
   display: flex;
-  justify-content: space-between;
-  margin: 20px 0;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
 }
 
 .reel {
-  width: 60px;
-  height: 60px;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.2);
-  font-size: 40px;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.5s ease;
+  flex-direction: column;
+  gap: 5px;
+  background: #4b2e15;
+  border: 2px solid #fff;
+  border-radius: 5px;
+  padding: 5px;
+  width: 60px;
+  height: 200px;
+  overflow: hidden;
 }
 
-#spinBtn {
-  background: #ffcc00;
+.symbol {
+  width: 100%;
+  height: 60px;
+  font-size: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px solid #fff;
+  border-radius: 5px;
+  background: #3b1e10;
+  box-shadow: inset 0 0 5px #000;
+  transition: transform 0.3s;
+}
+
+#spin-btn {
+  background: #ffd700;
+  color: #000;
   border: none;
   padding: 10px 20px;
-  font-size: 1em;
-  border-radius: 8px;
+  font-size: 1rem;
+  border-radius: 5px;
   cursor: pointer;
-  color: #4d1a07;
   transition: background 0.3s;
 }
 
-#spinBtn:hover {
-  background: #ff9900;
+#spin-btn:hover {
+  background: #e6b800;
 }
 
-.message {
-  margin-top: 10px;
+#result {
+  margin-top: 15px;
   font-weight: bold;
 }
