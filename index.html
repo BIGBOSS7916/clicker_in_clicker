@@ -4,21 +4,109 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Dog House Slot</title>
-<link rel="stylesheet" href="styles.css">
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #1c1c1c;
+    color: #ffd700;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+  h1 {
+    margin: 20px 0 10px;
+  }
+  #slot-machine {
+    display: grid;
+    grid-template-columns: repeat(5, 60px);
+    grid-template-rows: repeat(3, 60px);
+    gap: 5px;
+    margin: 20px;
+  }
+  .cell {
+    width: 60px;
+    height: 60px;
+    font-size: 2rem;
+    background: #3b1e10;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 2px solid #fff;
+    border-radius: 5px;
+    box-shadow: inset 0 0 5px #000;
+    transition: transform 0.3s;
+  }
+  #spin-btn {
+    background: #ffd700;
+    color: #000;
+    border: none;
+    padding: 10px 20px;
+    font-size: 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 10px;
+  }
+  #result {
+    margin-top: 10px;
+    font-weight: bold;
+  }
+</style>
 </head>
 <body>
-<div class="container">
-  <h1>🎰 Dog House Casino 🏠</h1>
-  <div id="slot-machine">
-    <div class="reel"></div>
-    <div class="reel"></div>
-    <div class="reel"></div>
-    <div class="reel"></div>
-    <div class="reel"></div>
-  </div>
-  <button id="spin-btn">SPIN</button>
-  <div id="result"></div>
-</div>
-<script src="script.js"></script>
+
+<h1>🎰 Dog House Slot 🏠</h1>
+<div id="slot-machine"></div>
+<button id="spin-btn">SPIN</button>
+<div id="result"></div>
+
+<script>
+  const symbols = ["🐶", "🍖", "🐾", "💎", "🏠", "7️⃣", "🍗"];
+  const slotMachine = document.getElementById("slot-machine");
+  const resultBox = document.getElementById("result");
+  const spinButton = document.getElementById("spin-btn");
+
+  // Создаём 15 ячеек
+  let cells = [];
+  for (let i = 0; i < 15; i++) {
+    const cell = document.createElement("div");
+    cell.className = "cell";
+    cell.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+    slotMachine.appendChild(cell);
+    cells.push(cell);
+  }
+
+  function spin() {
+    spinButton.disabled = true;
+    resultBox.textContent = "🎰 Спин...";
+    let spinsLeft = 30;
+
+    const spinInterval = setInterval(() => {
+      cells.forEach(cell => {
+        cell.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+        cell.style.transform = "scale(1.1)";
+        setTimeout(() => (cell.style.transform = "scale(1)"), 100);
+      });
+      spinsLeft--;
+      if (spinsLeft === 0) {
+        clearInterval(spinInterval);
+        finalizeSpin();
+      }
+    }, 50);
+  }
+
+  function finalizeSpin() {
+    cells.forEach(cell => {
+      cell.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+    });
+    resultBox.textContent = "✅ Спин завершён!";
+    spinButton.disabled = false;
+  }
+
+  spinButton.addEventListener("click", spin);
+</script>
+
 </body>
 </html>
