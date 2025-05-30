@@ -1,11 +1,22 @@
 const balanceEl = document.getElementById("balance");
-const slotEls = [document.getElementById("slot1"), document.getElementById("slot2"), document.getElementById("slot3")];
+const reels = [...document.querySelectorAll(".reel")];
 const spinBtn = document.getElementById("spinBtn");
 const messageEl = document.getElementById("message");
 
 let balance = 1000;
 const bet = 100;
-const symbols = ["🐶", "🦴", "🐾", "🐕", "🐩", "💎", "7️⃣"];
+
+const symbols = ["🐶", "🦴", "🐾", "🐕", "💎", "7️⃣", "WILD", "BONUS"];
+
+// Упрощённый пример линий (20 линий = массив индексов)
+const lines = [
+  [0, 0, 0, 0, 0], // Верхняя
+  [1, 1, 1, 1, 1], // Средняя
+  [2, 2, 2, 2, 2], // Нижняя
+  [0, 1, 2, 1, 0], // Диагональ
+  [2, 1, 0, 1, 2],
+  // ... и т.д. (добавь до 20 линий!)
+];
 
 spinBtn.addEventListener("click", spin);
 
@@ -14,44 +25,41 @@ function spin() {
     messageEl.textContent = "Недостаточно средств!";
     return;
   }
-
   balance -= bet;
   updateBalance();
-  messageEl.textContent = "";
+  messageEl.textContent = "Крутим...";
 
+  let finalSymbols = [];
+
+  // Анимация: смена символов
   let spins = 15;
   let count = 0;
-
-  const spinInterval = setInterval(() => {
-    for (let i = 0; i < 3; i++) {
-      const randIndex = Math.floor(Math.random() * symbols.length);
-      slotEls[i].textContent = symbols[randIndex];
-      slotEls[i].classList.add("spin");
-    }
+  const interval = setInterval(() => {
+    reels.forEach(reel => {
+      reel.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+    });
     count++;
     if (count >= spins) {
-      clearInterval(spinInterval);
-      for (let el of slotEls) el.classList.remove("spin");
-      checkWin();
+      clearInterval(interval);
+      // После анимации — итоговые символы
+      finalSymbols = reels.map(() => symbols[Math.floor(Math.random() * symbols.length)]);
+      for (let i = 0; i < reels.length; i++) {
+        reels[i].textContent = finalSymbols[i];
+      }
+      checkWin(finalSymbols);
     }
-  }, 80);
+  }, 100);
 }
 
-function checkWin() {
-  const [a, b, c] = slotEls.map(el => el.textContent);
-
-  if (a === b && b === c) {
+function checkWin(finalSymbols) {
+  // Пока что для примера: совпадение всех символов
+  if (new Set(finalSymbols).size === 1) {
     const win = bet * 10;
     balance += win;
     messageEl.textContent = 🎉 Джекпот! +${win}💰;
-  } else if (a === b  b === c  a === c) {
-    const win = bet * 2;
-    balance += win;
-    messageEl.textContent = ✨ Две совпали! +${win}💰;
   } else {
     messageEl.textContent = "❌ Не повезло!";
   }
-
   updateBalance();
 }
 
