@@ -1,72 +1,174 @@
-const emojis = ['🐶', '🤡', '😈', '👹', '👽', '🤖', '💀', '👻', '🤬', '😎', '🍔'];
-let balance = 1_000_000_000;
+const symbols = ["🐶", "🤡", "😈", "👹", "👽", "🤖", "💀", "👻", "🤬", "😎", "🍔", "💰", "⭐"];
+const WILD = "💰";
+const BONUS = "⭐";
+
+let balance = 1000000000;
+let bet = 100000;
+let freeSpins = 0;
 let spinning = false;
 
-const balanceElem = document.getElementById('balance');
+// Определение 20 линий выплат
+const paylines = [
+  [0, 0, 0, 0, 0],
+  [1, 1, 1, 1, 1],
+  [2, 2, 2, 2, 2],
+  [0, 1, 2, 1, 0],
+  [2, 1, 0, 1, 2],
+  [0, 0, 1, 0, 0],
+  [2, 2, 1, 2, 2],
+  [1, 0, 0, 0, 1],
+  [1, 2, 2, 2, 1],
+  [0, 1, 1, 1, 0],
+  [2, 1, 1, 1, 2],
+  [1, 1, 0, 1, 1],
+  [1, 1, 2, 1, 1],
+  [0, 1, 0, 1, 0],
+  [2, 1, 2, 1, 2],
+  [0, 2, 0, 2, 0],
+  [2, 0, 2, 0, 2],
+  [1, 0, 2, 0, 1],
+  [1, 2, 0, 2, 1],
+  [0, 2, 2, 2, 0]
+];
+
+const reelsContainer = document.getElementById('reels-container');
+const balanceContainer = document.getElementById('balance');
+const freeSpinsContainer = document.getElementById('free-spins');
 const betInput = document.getElementById('bet');
-const messageElem = document.getElementById('message');
+const spinButton = document.getElementById('spin-btn');
 
-function updateBalance() {
-  balanceElem.textContent = balance.toLocaleString('ru-RU') + ' 💰';
-}
+// Инициализация барабанов
+let reels = [];
 
-function spinReel(reelElem) {
-  const spinCount = 15;
-  let i = 0;
-  const interval = setInterval(() => {
-    const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-    reelElem.textContent = randomEmoji;
-    i++;
-    if (i >= spinCount) {
-      clearInterval(interval);
-    }
-  }, 50);
-}
-
-document.getElementById('spin').addEventListener('click', () => {
-  if (spinning) return;
-  let bet = parseInt(betInput.value.replace(/\./g, ''));
-  if (isNaN(bet) || bet <= 0) {
-    messageElem.textContent = 'Введите корректную ставку!';
-    return;
+function createReels() {
+  for (let i = 0; i < 5; i++) {
+    const reel = document.createElement('div');
+    reel.classList.add('reel');
+    reelsContainer.appendChild(reel);
+    reels.push(reel);
   }
-  if (bet > balance) {
-    messageElem.textContent = 'Недостаточно средств!';
+}
+
+function updateUI() {
+  balanceContainer.textContent = balance.toLocaleString('ru-RU');
+  freeSpinsContainer.textContent = freeSpins;
+  betInput.value = bet;
+}
+
+function getRandomSymbol() {
+  return symbols[Math.floor(Math.random() * symbols.length)];
+}
+
+function generateReelSymbols() {
+  const reelSymbols = [];
+  for (let i = 0; i < 3; i++) {
+    reelSymbols.push(getRandomSymbol());
+  }
+  return reelSymbols;
+}
+
+function displayReels(reelsSymbols) {
+  for (let i = 0; i < reels.length; i++) {
+    reels[i].innerHTML = '';
+    for (let j = 0; j < 3; j++) {
+      const symbolDiv = document.createElement('div');
+      symbolDiv.classList.add('symbol');
+      symbolDiv.textContent = reelsSymbols[i][j];
+      reels[i].appendChild(symbolDiv);
+    }
+  }
+}
+
+function spin() {
+  if (spinning) return;
+  if (balance < bet && freeSpins <= 0) {
+    alert('Недостаточно баланса!');
     return;
   }
 
   spinning = true;
-  messageElem.textContent = '';
+  spinButton.disabled = true;
 
-  balance -= bet;
-  updateBalance();
+  if (freeSpins > 0) {
+    freeSpins--;
+  } else {
+    balance -= bet;
+  }
 
-  const reels = [
-    document.getElementById('reel1'),
-    document.getElementById('reel2'),
-    document.getElementById('reel3')
-  ];
+  const reelsSymbols = [];
+  for (let i = 0; i < 5; i++) {
+    reelsSymbols.push(generateReelSymbols());
+  }
 
-  reels.forEach(reel => spinReel(reel));
+  displayReels(reelsSymbols);
 
-  setTimeout(() => {
-    const results = reels.map(reel => reel.textContent);
-    const unique = new Set(results);
-    let multiplier = 0;
-    if (unique.size === 1) {
-      multiplier = 10;
-      messageElem.textContent = '🎉 Три одинаковых! Выигрыш!';
-    } else if (unique.size === 2) {
-      multiplier = 3;
-      messageElem.textContent = '😊 Два одинаковых!';
-    } else {
-      messageElem.textContent = '😢 Ничего не выпало...';
+  const win = calculateWin(reelsSymbols);
+  balance += win;
+
+  updateUI();
+  spinning = false;
+  spinButton.disabled = false;
+
+  if (win > 0) {
+    alert(`Вы выиграли ${win.toLocaleString('ru-RU')} 💰`);
+  }
+}
+
+function calculateWin(reelsSymbols) {
+  let totalWin = 0;
+  let bonusCount = 0;
+
+  // Подсчёт бонусных символов
+  for (let i = 0; i < 5; i++) {
+    for (let j = 0; j < 3; j++) {
+      if (reelsSymbols[i][j] === BONUS) {
+        bonusCount++;
+      }
     }
-    const win = bet * multiplier;
-    balance += win;
-    updateBalance();
-    spinning = false;
-  }, 1000);
-});
+  }
 
-updateBalance();
+  if (bonusCount >= 3) {
+    const freeSpinsAwarded = 5 + Math.floor(Math.random() * 6); // 5-10 спинов
+    freeSpins += freeSpinsAwarded;
+    alert(`БОНУС! Получено ${freeSpinsAwarded} бесплатных спинов!`);
+  }
+
+  // Проверка каждой линии
+  for (const line of paylines) {
+    const lineSymbols = [];
+    for (let i = 0; i < 5; i++) {
+      lineSymbols.push(reelsSymbols[i][line[i]]);
+    }
+
+    let matchSymbol = null;
+    let matchCount = 0;
+    let multiplier = 1;
+
+    for (let i = 0; i < lineSymbols.length; i++) {
+      const symbol = lineSymbols[i];
+      if (symbol === WILD) {
+        multiplier *= 2;
+        matchCount++;
+      } else if (matchSymbol === null) {
+        matchSymbol = symbol;
+        matchCount++;
+      } else if (symbol === matchSymbol) {
+        matchCount++;
+      } else {
+        break;
+      }
+    }
+
+    if (matchCount >= 3) {
+      const winAmount = bet * matchCount * multiplier;
+      totalWin += winAmount;
+    }
+  }
+
+  return totalWin;
+}
+
+spinButton.addEventListener('click', spin);
+
+createReels();
+updateUI();
