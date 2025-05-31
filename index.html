@@ -1,213 +1,25 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Dog House Slot</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    background-color: #0c0c0c;
-    color: #fff;
-    text-align: center;
-    margin: 0;
-    padding: 0;
-  }
-
-  h1 {
-    margin-top: 20px;
-  }
-
-  .balance {
-    font-size: 20px;
-    margin: 10px 0;
-  }
-
-  .bet-container {
-    margin: 20px auto;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-  }
-
-  #betInput {
-    width: 200px;
-    padding: 10px;
-    font-size: 20px;
-    text-align: right;
-    border: none;
-    border-radius: 5px;
-  }
-
-  #spinButton {
-    padding: 10px 20px;
-    font-size: 20px;
-    cursor: pointer;
-    background-color: #f39c12;
-    border: none;
-    border-radius: 5px;
-    color: #fff;
-    transition: background 0.3s;
-  }
-
-  #spinButton:disabled {
-    background-color: #888;
-    cursor: not-allowed;
-  }
-
-  #spinButton:hover:enabled {
-    background-color: #e67e22;
-  }
-
-  .reels-container {
-    display: flex;
-    justify-content: center;
-    gap: 5px;
-    margin-top: 20px;
-  }
-
-  .reel {
-    width: 100px;
-    height: 240px;
-    overflow: hidden;
-    background: transparent;
-    position: relative;
-  }
-
-  .reel-content {
-    position: absolute;
-    top: 0;
-    width: 100%;
-  }
-
-  .symbol {
-    width: 100%;
-    height: 80px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 50px;
-  }
-</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dog House Casino</title>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-
-<h1>🎰 Dog House Slot</h1>
-
-<div class="balance">Баланс: $<span id="balance">1.000.000.000</span></div>
-
-<div class="bet-container">
-  <label for="betInput">Ставка ($):</label>
-  <input type="text" id="betInput" value="1.000.000" />
+<div id="app">
+  <div class="balance">Баланс: <span id="balance">1.000.000.000 💰</span></div>
+  <div class="slot-machine">
+    <div class="reel" id="reel1"></div>
+    <div class="reel" id="reel2"></div>
+    <div class="reel" id="reel3"></div>
+  </div>
+  <div class="controls">
+    <input type="number" id="bet" value="1000" min="1" step="1000" />
+    <button id="spin">SPIN 🎰</button>
+  </div>
+  <div id="message"></div>
 </div>
-
-<button id="spinButton">🎰 Спин</button>
-
-<div class="reels-container">
-  <div class="reel"><div class="reel-content"></div></div>
-  <div class="reel"><div class="reel-content"></div></div>
-  <div class="reel"><div class="reel-content"></div></div>
-  <div class="reel"><div class="reel-content"></div></div>
-  <div class="reel"><div class="reel-content"></div></div>
-</div>
-
-<script>
-const betInput = document.getElementById("betInput");
-const spinButton = document.getElementById("spinButton");
-const balanceEl = document.getElementById("balance");
-const reels = document.querySelectorAll(".reel-content");
-
-let balance = 1000000000;
-
-function formatNumberWithDots(number) {
-  return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-}
-
-function updateBalance() {
-  balanceEl.textContent = formatNumberWithDots(balance);
-}
-
-betInput.addEventListener("input", () => {
-  let inputValue = betInput.value.replace(/\D/g, '');
-  betInput.value = formatNumberWithDots(inputValue);
-});
-
-spinButton.addEventListener("click", () => {
-  const rawBet = betInput.value.replace(/\./g, "");
-  const bet = parseInt(rawBet, 10);
-
-  if (!bet || bet <= 0) {
-    alert("Введите корректную ставку!");
-    return;
-  }
-
-  if (bet > balance) {
-    alert("Недостаточно средств!");
-    return;
-  }
-
-  // Снимаем ставку
-  balance -= bet;
-  updateBalance();
-
-  spinButton.disabled = true;
-
-  const emojis = ["🐶", "🐾", "🍖", "🦴", "🏠"];
-  const finalSymbols = [];
-
-  reels.forEach(reel => {
-    reel.innerHTML = "";
-    for (let i = 0; i < 10; i++) {
-      const sym = document.createElement("div");
-      sym.classList.add("symbol");
-      sym.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-      reel.appendChild(sym);
-    }
-    // Пролистывание
-    reel.style.transition = "top 1s ease-out";
-    reel.style.top = "-720px";
-  });
-
-  setTimeout(() => {
-    reels.forEach(reel => {
-      const symbols = reel.querySelectorAll(".symbol");
-      // Оставляем последние 3
-      const final = symbols[7].cloneNode(true);
-      finalSymbols.push(final.textContent);
-      reel.innerHTML = "";
-      reel.appendChild(final);
-      reel.style.transition = "none";
-      reel.style.top = "0";
-    });
-
-    // Проверка на выигрыш: 3+ одинаковых символа в центре
-    const counts = {};
-    finalSymbols.forEach(sym => counts[sym] = (counts[sym] || 0) + 1);
-
-    let won = false;
-    for (const sym in counts) {
-      if (counts[sym] >= 3) {
-        const prize = bet * 2;
-        balance += prize;
-        updateBalance();
-        alert(`Выигрыш! +$${formatNumberWithDots(prize)}`);
-        won = true;
-        break;
-      }
-    }
-
-    if (!won) {
-      alert("Ничего не выпало 😢");
-    }
-
-    spinButton.disabled = false;
-  }, 1000);
-});
-
-// Первоначальный баланс
-updateBalance();
-</script>
-
+<script src="script.js"></script>
 </body>
 </html>
