@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dog House Слот</title>
-  <link rel="stylesheet" href="styles.css" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dog House Slot 🎰</title>
+<link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div id="app">
@@ -15,8 +15,10 @@
 
     <section id="slot-machine">
       <div id="reels-container"></div>
-      <button id="spin-button">СПИН</button>
-      <input type="number" id="bet-input" min="1" max="1000000000" step="1000" value="1000" />
+      <div id="controls">
+        <input type="number" id="bet-input" min="1" max="1000000000" step="1000" value="1000" />
+        <button id="spin-button">СПИН</button>
+      </div>
       <div id="free-spins-container" style="display:none;">
         Бесплатные спины: <span id="free-spins">0</span>
       </div>
@@ -26,20 +28,18 @@
     <section id="rules-section">
       <h2>Правила игры</h2>
       <div id="rules-content">
-        <!-- Правила из твоего текста здесь, с форматированием -->
-        <p>Все выплаты осуществляются при выпадении символов непрерывно слева направо по выигрышным линиям...</p>
+        <p>Все выплаты при выпадении символов слева направо по 20 выигрышным линиям.</p>
         <ul>
-          <li>5 — x37.55, 4 — x7.50, 3 — x2.50</li>
-          <li>Символы WILD 🥈🥉 могут заменять все символы, кроме BONUS 💰</li>
-          <li>Три символа BONUS запускают бонусный раунд и х5 ставки</li>
-          <li>В бонусном раунде все WILD остаются на барабанах</li>
-          <!-- и так далее -->
+          <li>5 — x37.55, 4 — x7.50, 3 — x2.50 для символа 🐶</li>
+          <li>Символы WILD 🥈🥉 заменяют все, кроме BONUS 💰</li>
+          <li>3 или больше BONUS запускают бонусный раунд и х5 ставки</li>
+          <li>В бонусном раунде WILD остаются на барабанах</li>
+          <li>20 линий выплат</li>
         </ul>
       </div>
     </section>
-
   </div>
 
-  <script src="script.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
