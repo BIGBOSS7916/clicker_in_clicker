@@ -193,3 +193,48 @@ function delay(ms) {
 
 updateBalance();
 spinButton.addEventListener("click", spin);
+// Кнопка "Показать правила"
+const rulesButton = document.getElementById("show-rules");
+const rulesContainer = document.getElementById("rules-container");
+let rulesVisible = false;
+
+rulesButton.addEventListener("click", () => {
+  rulesVisible = !rulesVisible;
+  rulesContainer.style.display = rulesVisible ? "block" : "none";
+});
+
+// Правила (пример)
+rulesContainer.innerHTML = `
+  <h3>Правила игры</h3>
+  <p>Все выплаты осуществляются при выпадении одинаковых символов слева направо по выигрышным линиям (20 линий).</p>
+  <ul>
+    <li>🥈 и 🥉 — это WILD символы, заменяют любые другие символы на линии.</li>
+    <li>💰 — бонус-символ, выпадающий только на барабанах 1, 3, 5. При 3 символах 💰 активируется бонусная игра.</li>
+    <li>Множители WILD добавляют множители к выплатам на линии (🥈 +1, 🥉 +2).</li>
+    <li>Бесплатные спины выпадают в бонусной игре. В них WILD остаются на экране до конца бонуса.</li>
+  </ul>
+`;
+
+// Обновим стиль сообщения
+function setMessage(text, type = "info") {
+  message.textContent = text;
+  message.className = "";
+  message.classList.add(type);
+}
+
+// Пример вызова setMessage
+// setMessage("🎉 Бонус игра!", "success");
+// setMessage("Недостаточно средств!", "error");
+
+// Адаптивность (добавим стили, если нужно)
+window.addEventListener("resize", () => {
+  const width = window.innerWidth;
+  if (width < 600) {
+    document.body.classList.add("mobile");
+  } else {
+    document.body.classList.remove("mobile");
+  }
+});
+
+// Запустим проверку при загрузке
+window.dispatchEvent(new Event("resize"));
