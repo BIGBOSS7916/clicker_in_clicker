@@ -1,159 +1,122 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8" />
-<title>Слот с эмодзи</title>
-<style>
-  body {
-    background: #111;
-    color: #fff;
-    font-family: sans-serif;
-    text-align: center;
-    padding: 20px;
-  }
-  .slot-container {
-    display: flex;
-    justify-content: center;
-    margin: 20px 0;
-  }
-  .reel {
-    width: 60px;
-    height: 180px;
-    overflow: hidden;
-    margin: 0 5px;
-    border: 2px solid #fff;
-    border-radius: 5px;
-    background: #000;
-    font-size: 2em;
-    line-height: 60px;
-    position: relative;
-  }
-  .symbols {
-    position: absolute;
-    top: 0;
-    width: 100%;
-    transition: top 1s ease-out;
-  }
-  .controls {
-    margin-top: 20px;
-  }
-  .balance {
-    margin: 10px 0;
-  }
-  button {
-    padding: 10px 20px;
-    background: #4CAF50;
-    border: none;
-    color: #fff;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  button:disabled {
-    background: #777;
-  }
-</style>
+  <meta charset="UTF-8">
+  <title>Слот-машина</title>
+  <style>
+    body {
+      background-color: #222;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 50px;
+    }
+    .slot-machine {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .reel {
+      width: 60px;
+      height: 60px;
+      margin: 0 10px;
+      background-color: #000;
+      border: 2px solid #fff;
+      border-radius: 5px;
+      font-size: 2em;
+      line-height: 60px;
+    }
+    .controls {
+      margin-top: 20px;
+    }
+    .controls input {
+      width: 100px;
+      padding: 5px;
+      font-size: 1em;
+    }
+    .controls button {
+      padding: 5px 10px;
+      font-size: 1em;
+      margin-left: 10px;
+    }
+    .balance, .message {
+      margin-top: 20px;
+      font-size: 1.2em;
+    }
+  </style>
 </head>
 <body>
+  <h1>🎰 Слот-машина 🎰</h1>
+  <div class="slot-machine">
+    <div class="reel" id="reel1">🐶</div>
+    <div class="reel" id="reel2">🐶</div>
+    <div class="reel" id="reel3">🐶</div>
+  </div>
+  <div class="controls">
+    <input type="number" id="bet" value="1000" min="1" step="1000">
+    <button id="spin">Крутить</button>
+  </div>
+  <div class="balance" id="balance">Баланс: 1,000,000,000 💰</div>
+  <div class="message" id="message"></div>
 
-<h1>🎰 Слот с Эмодзи 🎰</h1>
+  <script>
+    const emojis = ['🐶', '🤡', '😈', '👹', '👽', '🤖', '💀', '👻', '🤬', '😎', '🍔'];
+    let balance = 1000000000;
 
-<div class="balance" id="balance">Баланс: 1.000.000.000 💰</div>
+    const reel1 = document.getElementById('reel1');
+    const reel2 = document.getElementById('reel2');
+    const reel3 = document.getElementById('reel3');
+    const balanceElem = document.getElementById('balance');
+    const messageElem = document.getElementById('message');
+    const betInput = document.getElementById('bet');
+    const spinButton = document.getElementById('spin');
 
-<div class="slot-container" id="slot">
-  <div class="reel" id="reel1"></div>
-  <div class="reel" id="reel2"></div>
-  <div class="reel" id="reel3"></div>
-  <div class="reel" id="reel4"></div>
-  <div class="reel" id="reel5"></div>
-</div>
-
-<div class="controls">
-  <input type="number" id="bet" value="1000" step="1000" min="1">
-  <button id="spinBtn">SPIN</button>
-</div>
-
-<div id="message"></div>
-
-<script>
-const emojis = ['🐶','🤡','😈','👹','👽','🤖','💀','👻','🤬','😎','🍔'];
-let balance = 1000000000;
-let spinning = false;
-
-const reels = [
-  document.getElementById('reel1'),
-  document.getElementById('reel2'),
-  document.getElementById('reel3'),
-  document.getElementById('reel4'),
-  document.getElementById('reel5')
-];
-
-function updateBalance() {
-  document.getElementById('balance').textContent = 'Баланс: ' + balance.toLocaleString('ru-RU') + ' 💰';
-}
-
-function fillReel(reel) {
-  const symbols = document.createElement('div');
-  symbols.classList.add('symbols');
-  for(let i=0; i<10; i++) {
-    const sym = document.createElement('div');
-    sym.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-    symbols.appendChild(sym);
-  }
-  reel.innerHTML = '';
-  reel.appendChild(symbols);
-}
-
-function spinReel(reel) {
-  const symbols = reel.querySelector('.symbols');
-  const shift = -60 * (Math.floor(Math.random() * 7) + 3); // смещение (от 3 до 9 "прыжков")
-  symbols.style.top = shift + 'px';
-}
-
-document.getElementById('spinBtn').addEventListener('click', () => {
-  const bet = parseInt(document.getElementById('bet').value);
-  const message = document.getElementById('message');
-  if (spinning) return; // пока барабаны крутятся — блокируем
-  if (isNaN(bet) || bet <= 0) {
-    message.textContent = 'Введите корректную ставку!';
-    return;
-  }
-  if (bet > balance) {
-    message.textContent = 'Недостаточно средств!';
-    return;
-  }
-  spinning = true;
-  balance -= bet;
-  updateBalance();
-  message.textContent = '';
-
-  reels.forEach(fillReel);
-  setTimeout(() => {
-    reels.forEach(spinReel);
-  }, 50);
-
-  setTimeout(() => {
-    // Считаем "выигрыш": если хотя бы 3 эмодзи совпали вертикально (упрощённо)
-    const topSymbols = reels.map(reel => reel.querySelector('.symbols').children[3].textContent);
-    const counts = {};
-    topSymbols.forEach(sym => counts[sym] = (counts[sym] || 0) + 1);
-
-    let win = 0;
-    for (const sym in counts) {
-      if (counts[sym] >= 3) win = bet * counts[sym]; // множитель — количество одинаковых
+    function updateBalance() {
+      balanceElem.textContent = 'Баланс: ' + balance.toLocaleString('ru-RU') + ' 💰';
     }
-    if (win > 0) {
+
+    function spinReel(reel) {
+      const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+      reel.textContent = randomEmoji;
+      return randomEmoji;
+    }
+
+    spinButton.addEventListener('click', () => {
+      const bet = parseInt(betInput.value);
+      if (isNaN(bet) || bet <= 0) {
+        messageElem.textContent = 'Введите корректную ставку!';
+        return;
+      }
+      if (bet > balance) {
+        messageElem.textContent = 'Недостаточно средств!';
+        return;
+      }
+
+      balance -= bet;
+      updateBalance();
+      messageElem.textContent = '';
+
+      const result1 = spinReel(reel1);
+      const result2 = spinReel(reel2);
+      const result3 = spinReel(reel3);
+
+      let multiplier = 0;
+      if (result1 === result2 && result2 === result3) {
+        multiplier = 10;
+        messageElem.textContent = '🎉 Три одинаковых! Выигрыш!';
+      } else if (result1 === result2 || result2 === result3 || result1 === result3) {
+        multiplier = 3;
+        messageElem.textContent = '😊 Два одинаковых!';
+      } else {
+        messageElem.textContent = '😢 Ничего не выпало...';
+      }
+
+      const win = bet * multiplier;
       balance += win;
-      message.textContent = `🎉 Вы выиграли ${win.toLocaleString('ru-RU')}!`;
-    } else {
-      message.textContent = '😢 Проигрыш...';
-    }
+      updateBalance();
+    });
+
     updateBalance();
-    spinning = false;
-  }, 1200);
-});
-
-updateBalance();
-</script>
-
+  </script>
 </body>
 </html>
