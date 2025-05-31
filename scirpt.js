@@ -15,7 +15,6 @@ const symbolMultipliers = {
   "🥉": [0, 0, 0],
   "💰": [0, 0, 0]
 };
-
 const lines = [
   [0, 1, 2, 3, 4],
   [5, 6, 7, 8, 9],
@@ -50,7 +49,6 @@ const spinButton = document.getElementById("spin-button");
 const message = document.getElementById("message");
 const freeSpinsDisplay = document.getElementById("free-spins");
 
-// Инициализация барабанов
 function initReels() {
   reelsContainer.innerHTML = "";
   for (let i = 0; i < 5; i++) {
@@ -67,23 +65,25 @@ function initReels() {
 }
 initReels();
 
-// Получить случайный символ
 function randomSymbol() {
   return symbols[Math.floor(Math.random() * symbols.length)];
 }
 
-// Обновить баланс с точками
 function updateBalance() {
   balanceAmount.textContent = balance.toLocaleString("ru-RU");
 }
 
-// Кручение барабанов
+function setMessage(text, type = "info") {
+  message.textContent = text;
+  message.className = type;
+}
+
 async function spin() {
   if (spinning) return;
 
   const bet = parseInt(betInput.value);
   if (bet > balance) {
-    message.textContent = "Недостаточно средств!";
+    setMessage("Недостаточно средств!", "error");
     return;
   }
 
@@ -93,26 +93,37 @@ async function spin() {
   }
 
   spinning = true;
-  message.textContent = "";
+  setMessage("");
   spinButton.disabled = true;
 
   const reels = document.querySelectorAll(".reel");
-  for (let i = 0; i < 20; i++) {
+
+  for (let step = 0; step < 20; step++) {
     reels.forEach(reel => {
       const symbolsDivs = reel.querySelectorAll(".symbol");
       symbolsDivs.forEach(sym => {
-        sym.style.transform = translateY(${Math.random() * 50}px);
-        sym.textContent = randomSymbol();
+        const nextSymbol = randomSymbol();
+        sym.style.transition = "transform 0.1s ease";
+        sym.style.transform = "translateY(-100%)";
+        setTimeout(() => {
+          sym.textContent = nextSymbol;
+          sym.style.transition = "none";
+          sym.style.transform = "translateY(100%)";
+          setTimeout(() => {
+            sym.style.transition = "transform 0.1s ease";
+            sym.style.transform = "translateY(0)";
+          }, 10);
+        }, 100);
       });
     });
     await delay(50);
   }
 
-  // Последние символы (итог)
   reels.forEach(reel => {
     const symbolsDivs = reel.querySelectorAll(".symbol");
     symbolsDivs.forEach(sym => {
       sym.textContent = randomSymbol();
+      sym.style.transition = "none";
       sym.style.transform = "translateY(0)";
     });
   });
@@ -122,7 +133,6 @@ async function spin() {
   spinButton.disabled = false;
 }
 
-// Проверка выигрыша
 function checkWin(bet) {
   const finalSymbols = [];
   document.querySelectorAll(".reel").forEach(reel => {
@@ -161,8 +171,9 @@ function checkWin(bet) {
 
   if (bonusCount >= 3) {
     totalWin += bet * 5;
-    freeSpins += Math.floor(Math.random() * 10) + 5;
-    message.textContent = "🎉 Бонус игра! + бесплатные спины!";
+    const freeSpinsWon = Math.floor(Math.random() * 10) + 5;
+    freeSpins += freeSpinsWon;
+    setMessage(`🎉 Бонус игра! +${freeSpinsWon} бесплатных спинов!`, "bonus");
   }
 
   if (freeSpins > 0) {
@@ -174,15 +185,14 @@ function checkWin(bet) {
 
   if (totalWin > 0) {
     balance += totalWin;
-    message.textContent = 🎉 Выигрыш: ${totalWin.toLocaleString("ru-RU")} $;
+    setMessage(`🎉 Выигрыш: ${totalWin.toLocaleString("ru-RU")} $`, "win");
   } else if (bonusCount < 3) {
-    message.textContent = "Неудача!";
+    setMessage("Неудача!", "lose");
   }
 
   updateBalance();
 }
 
-// WILD?
 function isWild(sym) {
   return sym === "🥈" || sym === "🥉";
 }
@@ -193,48 +203,3 @@ function delay(ms) {
 
 updateBalance();
 spinButton.addEventListener("click", spin);
-// Кнопка "Показать правила"
-const rulesButton = document.getElementById("show-rules");
-const rulesContainer = document.getElementById("rules-container");
-let rulesVisible = false;
-
-rulesButton.addEventListener("click", () => {
-  rulesVisible = !rulesVisible;
-  rulesContainer.style.display = rulesVisible ? "block" : "none";
-});
-
-// Правила (пример)
-rulesContainer.innerHTML = `
-  <h3>Правила игры</h3>
-  <p>Все выплаты осуществляются при выпадении одинаковых символов слева направо по выигрышным линиям (20 линий).</p>
-  <ul>
-    <li>🥈 и 🥉 — это WILD символы, заменяют любые другие символы на линии.</li>
-    <li>💰 — бонус-символ, выпадающий только на барабанах 1, 3, 5. При 3 символах 💰 активируется бонусная игра.</li>
-    <li>Множители WILD добавляют множители к выплатам на линии (🥈 +1, 🥉 +2).</li>
-    <li>Бесплатные спины выпадают в бонусной игре. В них WILD остаются на экране до конца бонуса.</li>
-  </ul>
-`;
-
-// Обновим стиль сообщения
-function setMessage(text, type = "info") {
-  message.textContent = text;
-  message.className = "";
-  message.classList.add(type);
-}
-
-// Пример вызова setMessage
-// setMessage("🎉 Бонус игра!", "success");
-// setMessage("Недостаточно средств!", "error");
-
-// Адаптивность (добавим стили, если нужно)
-window.addEventListener("resize", () => {
-  const width = window.innerWidth;
-  if (width < 600) {
-    document.body.classList.add("mobile");
-  } else {
-    document.body.classList.remove("mobile");
-  }
-});
-
-// Запустим проверку при загрузке
-window.dispatchEvent(new Event("resize"));
