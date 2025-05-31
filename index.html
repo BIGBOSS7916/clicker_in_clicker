@@ -1,122 +1,29 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Слот-машина</title>
-  <style>
-    body {
-      background-color: #222;
-      color: #fff;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 50px;
-    }
-    .slot-machine {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 20px;
-    }
-    .reel {
-      width: 60px;
-      height: 60px;
-      margin: 0 10px;
-      background-color: #000;
-      border: 2px solid #fff;
-      border-radius: 5px;
-      font-size: 2em;
-      line-height: 60px;
-    }
-    .controls {
-      margin-top: 20px;
-    }
-    .controls input {
-      width: 100px;
-      padding: 5px;
-      font-size: 1em;
-    }
-    .controls button {
-      padding: 5px 10px;
-      font-size: 1em;
-      margin-left: 10px;
-    }
-    .balance, .message {
-      margin-top: 20px;
-      font-size: 1.2em;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>🎰 Слот-машина 🎰</h1>
   <div class="slot-machine">
-    <div class="reel" id="reel1">🐶</div>
-    <div class="reel" id="reel2">🐶</div>
-    <div class="reel" id="reel3">🐶</div>
+    <h1>🎰 Слот-машина</h1>
+    <div class="balance-container">
+      💰 Баланс: <span id="balance">1 000 000 000</span>$
+    </div>
+    <div class="reels-container" id="reels-container">
+      <!-- Барабаны будут добавлены динамически -->
+    </div>
+    <div class="controls">
+      <label for="bet">Ставка:</label>
+      <input type="number" id="bet" value="100000" step="100000" min="100000" />
+      <button id="spin-btn">▶️ SPIN</button>
+    </div>
+    <div class="free-spins-container">
+      🎁 Бесплатные спины: <span id="free-spins">0</span>
+    </div>
   </div>
-  <div class="controls">
-    <input type="number" id="bet" value="1000" min="1" step="1000">
-    <button id="spin">Крутить</button>
-  </div>
-  <div class="balance" id="balance">Баланс: 1,000,000,000 💰</div>
-  <div class="message" id="message"></div>
-
-  <script>
-    const emojis = ['🐶', '🤡', '😈', '👹', '👽', '🤖', '💀', '👻', '🤬', '😎', '🍔'];
-    let balance = 1000000000;
-
-    const reel1 = document.getElementById('reel1');
-    const reel2 = document.getElementById('reel2');
-    const reel3 = document.getElementById('reel3');
-    const balanceElem = document.getElementById('balance');
-    const messageElem = document.getElementById('message');
-    const betInput = document.getElementById('bet');
-    const spinButton = document.getElementById('spin');
-
-    function updateBalance() {
-      balanceElem.textContent = 'Баланс: ' + balance.toLocaleString('ru-RU') + ' 💰';
-    }
-
-    function spinReel(reel) {
-      const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-      reel.textContent = randomEmoji;
-      return randomEmoji;
-    }
-
-    spinButton.addEventListener('click', () => {
-      const bet = parseInt(betInput.value);
-      if (isNaN(bet) || bet <= 0) {
-        messageElem.textContent = 'Введите корректную ставку!';
-        return;
-      }
-      if (bet > balance) {
-        messageElem.textContent = 'Недостаточно средств!';
-        return;
-      }
-
-      balance -= bet;
-      updateBalance();
-      messageElem.textContent = '';
-
-      const result1 = spinReel(reel1);
-      const result2 = spinReel(reel2);
-      const result3 = spinReel(reel3);
-
-      let multiplier = 0;
-      if (result1 === result2 && result2 === result3) {
-        multiplier = 10;
-        messageElem.textContent = '🎉 Три одинаковых! Выигрыш!';
-      } else if (result1 === result2 || result2 === result3 || result1 === result3) {
-        multiplier = 3;
-        messageElem.textContent = '😊 Два одинаковых!';
-      } else {
-        messageElem.textContent = '😢 Ничего не выпало...';
-      }
-
-      const win = bet * multiplier;
-      balance += win;
-      updateBalance();
-    });
-
-    updateBalance();
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
