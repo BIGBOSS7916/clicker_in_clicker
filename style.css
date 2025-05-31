@@ -1,64 +1,71 @@
 body {
-  margin: 0;
+  background-color: #222;
+  color: #fff;
   font-family: Arial, sans-serif;
-  background: #2b1a0f;
-  color: #f5c16c;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-}
-.container {
   text-align: center;
+  margin: 0;
+  padding: 0;
 }
-h1 {
+
+#app {
+  max-width: 400px;
+  margin: 50px auto;
+}
+
+.balance {
+  font-size: 1.2em;
   margin-bottom: 10px;
-  color: #ffd700;
 }
-#slot-machine {
+
+.slot-machine {
   display: flex;
   justify-content: center;
-  gap: 10px;
   margin: 20px 0;
 }
+
 .reel {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  background: #4b2e15;
+  background: #000;
   border: 2px solid #fff;
   border-radius: 5px;
-  padding: 5px;
   width: 60px;
-  height: 200px;
-  overflow: hidden;
-}
-.symbol {
-  width: 100%;
   height: 60px;
-  font-size: 2rem;
+  margin: 0 5px;
+  font-size: 2.5em;
   display: flex;
-  justify-content: center;
   align-items: center;
-  border: 2px solid #fff;
-  border-radius: 5px;
-  background: #3b1e10;
-  box-shadow: inset 0 0 5px #000;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
 }
-#spin-btn {
-  background: #ffd700;
+
+.reel span {
+  position: absolute;
+  width: 100%;
+  text-align: center;
+}
+
+.controls {
+  margin-top: 10px;
+}
+
+#bet {
+  width: 120px;
+  text-align: center;
+}
+
+button {
+  background: #f39c12;
   color: #000;
   border: none;
   padding: 10px 20px;
-  font-size: 1rem;
+  margin-left: 10px;
   border-radius: 5px;
   cursor: pointer;
-  transition: background 0.3s;
+  font-size: 1em;
 }
-#spin-btn:hover {
-  background: #e6b800;
-}
-#result {
-  margin-top: 10px;
+
+#message {
+  margin-top: 15px;
   font-weight: bold;
+  min-height: 24px;
 }
