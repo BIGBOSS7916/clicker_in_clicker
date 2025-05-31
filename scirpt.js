@@ -1,253 +1,195 @@
-// Символы и конфигурации
-const SYMBOLS = ['🐶','🤡','😈','👹','👽','🤖','💀','👻','🤬','😎','🍔'];
-const WILD_SYMBOLS = ['🥈','🥉'];
-const BONUS_SYMBOL = '💰';
-
-// 20 линий выплат (каждая — массив индексов строк для колонок 0..4)
-const FULL_WIN_LINES = [
-  [0,0,0,0,0],
-  [1,1,1,1,1],
-  [2,2,2,2,2],
-  [0,1,0,1,0],
-  [2,1,2,1,2],
-  [0,0,1,0,0],
-  [2,2,1,2,2],
-  [1,0,1,2,1],
-  [1,2,1,0,1],
-  [0,1,1,1,0],
-  [2,1,1,1,2],
-  [1,1,0,1,1],
-  [1,1,2,1,1],
-  [0,2,0,2,0],
-  [2,0,2,0,2],
-  [1,0,0,0,1],
-  [1,2,2,2,1],
-  [0,1,2,2,2],
-  [2,1,0,0,0],
-  [1,1,1,0,2]
-];
-
-// Множители для символов
-const PAYOUTS = {
-  '🐶': {3: 2.5, 4: 7.5, 5: 37.55},
-  '🤡': {3: 1.75, 4: 5.0, 5: 25.05},
-  '😈': {3: 1.25, 4: 3.0, 5: 15.0},
-  '👹': {3: 1.0, 4: 2.0, 5: 10.0},
-  '👽': {3: 0.6, 4: 1.25, 5: 7.5},
-  '🤖': {3: 0.4, 4: 1.0, 5: 5.0},
-  '💀': {3: 0.25, 4: 0.5, 5: 2.5},
-  '👻': {3: 0.25, 4: 0.5, 5: 2.5},
-  '🤬': {3: 0.1, 4: 0.25, 5: 1.25},
-  '😎': {3: 0.1, 4: 0.25, 5: 1.25},
-  '🍔': {3: 0.1, 4: 0.25, 5: 1.25},
-  'BONUS': {3: 5} // бонус при 3 и более
+const symbols = ["🐶", "🤡", "😈", "👹", "👽", "🤖", "💀", "👻", "🤬", "😎", "🍔", "🥈", "🥉", "💰"];
+const symbolMultipliers = {
+  "🐶": [0.60, 2.00, 7.50],
+  "🤡": [0.40, 1.25, 5.00],
+  "😈": [0.25, 1.00, 2.50],
+  "👹": [0.25, 1.00, 2.50],
+  "👽": [0.10, 0.25, 1.25],
+  "🤖": [0.10, 0.25, 1.25],
+  "💀": [0.10, 0.25, 1.25],
+  "👻": [0.25, 0.50, 2.50],
+  "🤬": [0.25, 0.50, 2.50],
+  "😎": [0.25, 0.50, 2.50],
+  "🍔": [0.25, 1.00, 2.50],
+  "🥈": [0, 0, 0],
+  "🥉": [0, 0, 0],
+  "💰": [0, 0, 0]
 };
 
-let balance = 1_000_000_000;
-let bet = 1000;
+const lines = [
+  [0, 1, 2, 3, 4],
+  [5, 6, 7, 8, 9],
+  [10, 11, 12, 13, 14],
+  [0, 6, 12, 8, 4],
+  [10, 6, 2, 8, 14],
+  [0, 5, 10, 5, 0],
+  [4, 9, 14, 9, 4],
+  [0, 6, 12, 6, 0],
+  [4, 8, 12, 8, 4],
+  [2, 6, 10, 6, 2],
+  [0, 1, 7, 3, 4],
+  [10, 11, 7, 13, 14],
+  [5, 6, 7, 8, 9],
+  [0, 5, 7, 9, 4],
+  [10, 5, 7, 9, 14],
+  [2, 1, 7, 3, 2],
+  [12, 11, 7, 13, 12],
+  [5, 6, 2, 8, 9],
+  [5, 1, 7, 3, 9],
+  [0, 6, 7, 8, 4]
+];
+
+let balance = 1000000000;
 let freeSpins = 0;
 let spinning = false;
 
-// UI элементы
-const balanceElem = document.getElementById('balance-value');
-const betInput = document.getElementById('bet-input');
-const spinButton = document.getElementById('spin-button');
-const reelsContainer = document.getElementById('reels-container');
-const freeSpinsElem = document.getElementById('free-spins');
-const freeSpinsContainer = document.getElementById('free-spins-container');
-const winMessage = document.getElementById('win-message');
+const reelsContainer = document.getElementById("reels");
+const balanceAmount = document.getElementById("balance-amount");
+const betInput = document.getElementById("bet");
+const spinButton = document.getElementById("spin-button");
+const message = document.getElementById("message");
+const freeSpinsDisplay = document.getElementById("free-spins");
 
-let reels = new Array(5).fill(0).map(() => new Array(3).fill(''));
-
-// Форматируем число с точками
-function formatNumberWithDots(x) {
-  return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-}
-
-// Отобразить баланс и другие данные
-function updateUI() {
-  balanceElem.textContent = formatNumberWithDots(balance) + '$';
-  betInput.value = bet;
-  if (freeSpins > 0) {
-    freeSpinsContainer.style.display = 'block';
-    freeSpinsElem.textContent = freeSpins;
-  } else {
-    freeSpinsContainer.style.display = 'none';
-  }
-  renderReels();
-  winMessage.textContent = '';
-}
-
-// Отрисовка барабанов
-function renderReels() {
-  reelsContainer.innerHTML = '';
-  for(let row = 0; row < 3; row++) {
-    for(let col = 0; col < 5; col++) {
-      const symbol = reels[col][row] || SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)];
-      const div = document.createElement('div');
-      div.classList.add('symbol');
-      div.textContent = symbol;
-      reelsContainer.appendChild(div);
+// Инициализация барабанов
+function initReels() {
+  reelsContainer.innerHTML = "";
+  for (let i = 0; i < 5; i++) {
+    const reel = document.createElement("div");
+    reel.classList.add("reel");
+    for (let j = 0; j < 3; j++) {
+      const symbol = document.createElement("div");
+      symbol.classList.add("symbol");
+      symbol.textContent = randomSymbol();
+      reel.appendChild(symbol);
     }
+    reelsContainer.appendChild(reel);
   }
 }
+initReels();
 
-// Генерация символов для спина
-function generateSpinResult() {
-  const result = [];
-  for(let col=0; col<5; col++) {
-    const colSymbols = [];
-    for(let row=0; row<3; row++) {
-      // Случайно вкинуть BONUS и WILD по правилам
-      if (col === 0 || col === 2 || col === 4) {
-        // бонус только на барабанах 1,3,5
-        if (Math.random() < 0.07) {
-          colSymbols.push(BONUS_SYMBOL);
-          continue;
-        }
-      }
-      if (col === 1 || col === 2 || col === 3) {
-        // WILD на барабанах 2,3,4 с множителем 50% шанс x2, 50% x3
-        if (Math.random() < 0.1) {
-          let wildSymbol = WILD_SYMBOLS[Math.floor(Math.random()*WILD_SYMBOLS.length)];
-          // Добавляем множитель — например просто цифра рядом для примера (в реале визуально)
-          colSymbols.push(wildSymbol); 
-          continue;
-        }
-      }
-      colSymbols.push(SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)]);
-    }
-    result.push(colSymbols);
-  }
-  return result;
+// Получить случайный символ
+function randomSymbol() {
+  return symbols[Math.floor(Math.random() * symbols.length)];
 }
 
-// Анимация кручения (плавная смена символов снизу вверх)
-async function animateSpin() {
-  const frames = 15;
-  const delay = 50;
-  for (let f = 0; f < frames; f++) {
-    for(let col = 0; col < 5; col++) {
-      for(let row = 0; row < 3; row++) {
-        reels[col][row] = SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)];
-      }
-    }
-    renderReels();
-    await new Promise(r => setTimeout(r, delay));
-  }
-  // После анимации ставим итоговый результат
-  reels = generateSpinResult();
-  renderReels();
+// Обновить баланс с точками
+function updateBalance() {
+  balanceAmount.textContent = balance.toLocaleString("ru-RU");
 }
 
-// Проверка выигрышей на линиях с учетом WILD и множителей
-function calculateWin() {
+// Кручение барабанов
+async function spin() {
+  if (spinning) return;
+
+  const bet = parseInt(betInput.value);
+  if (bet > balance) {
+    message.textContent = "Недостаточно средств!";
+    return;
+  }
+
+  if (freeSpins === 0) {
+    balance -= bet;
+    updateBalance();
+  }
+
+  spinning = true;
+  message.textContent = "";
+  spinButton.disabled = true;
+
+  const reels = document.querySelectorAll(".reel");
+  for (let i = 0; i < 20; i++) {
+    reels.forEach(reel => {
+      const symbolsDivs = reel.querySelectorAll(".symbol");
+      symbolsDivs.forEach(sym => {
+        sym.style.transform = translateY(${Math.random() * 50}px);
+        sym.textContent = randomSymbol();
+      });
+    });
+    await delay(50);
+  }
+
+  // Последние символы (итог)
+  reels.forEach(reel => {
+    const symbolsDivs = reel.querySelectorAll(".symbol");
+    symbolsDivs.forEach(sym => {
+      sym.textContent = randomSymbol();
+      sym.style.transform = "translateY(0)";
+    });
+  });
+
+  checkWin(bet);
+  spinning = false;
+  spinButton.disabled = false;
+}
+
+// Проверка выигрыша
+function checkWin(bet) {
+  const finalSymbols = [];
+  document.querySelectorAll(".reel").forEach(reel => {
+    reel.querySelectorAll(".symbol").forEach(sym => {
+      finalSymbols.push(sym.textContent);
+    });
+  });
+
   let totalWin = 0;
   let bonusCount = 0;
-  // Подсчёт бонусов на поле
-  for(let col=0; col<5; col++) {
-    for(let row=0; row<3; row++) {
-      if(reels[col][row] === BONUS_SYMBOL) bonusCount++;
-    }
-  }
 
-  // Если 3 и более бонуса — прибавляем х5 ставки + запускаем бонусный раунд
-  if (bonusCount >= 3) {
-    totalWin += bet * 5;
-    freeSpins += Math.floor(Math.random() * 5) + 5; // 5-9 бесплатных спинов
-  }
+  lines.forEach(line => {
+    const lineSymbols = line.map(idx => finalSymbols[idx]);
+    let firstSym = lineSymbols[0];
+    let count = 1;
+    let wildMultiplier = 1;
 
-  // Вычисление выигрыша по линиям
-  FULL_WIN_LINES.forEach(line => {
-    let lineSymbols = [];
-    for(let col=0; col<5; col++) {
-      lineSymbols.push(reels[col][line[col]]);
-    }
-
-    // Ищем выигрышную последовательность слева направо
-    let firstSymbol = null;
-    let count = 0;
-    let wildMultiplier = 0;
-    let winSymbol = null;
-
-    for(let i=0; i<lineSymbols.length; i++) {
-      let sym = lineSymbols[i];
-      if(i === 0) {
-        if(sym === BONUS_SYMBOL) break; // бонусы не считаются на линиях
-        firstSymbol = (WILD_SYMBOLS.includes(sym)) ? null : sym;
-        winSymbol = (WILD_SYMBOLS.includes(sym)) ? null : sym;
-        if(WILD_SYMBOLS.includes(sym)) wildMultiplier += (sym === '🥈') ? 2 : 3;
-        count++;
-        continue;
-      }
-
-      if(sym === firstSymbol || (WILD_SYMBOLS.includes(sym) || (firstSymbol === null && !WILD_SYMBOLS.includes(sym)))) {
-        if(WILD_SYMBOLS.includes(sym)) {
-          wildMultiplier += (sym === '🥈') ? 2 : 3;
-          if(winSymbol === null) winSymbol = firstSymbol || sym;
-        } else {
-          if(winSymbol === null) winSymbol = sym;
-        }
+    for (let i = 1; i < lineSymbols.length; i++) {
+      const sym = lineSymbols[i];
+      if (sym === firstSym || isWild(sym)) {
+        if (isWild(sym)) wildMultiplier += sym === "🥈" ? 1 : 2;
         count++;
       } else {
         break;
       }
     }
 
-    if(count >= 3 && winSymbol && PAYOUTS[winSymbol]) {
-      let basePayout = PAYOUTS[winSymbol][count] || 0;
-      if(wildMultiplier === 0) wildMultiplier = 1;
-      totalWin += bet * basePayout * wildMultiplier;
+    if (count >= 3 && symbolMultipliers[firstSym]) {
+      const idx = count - 3;
+      const win = bet * symbolMultipliers[firstSym][idx] * wildMultiplier;
+      totalWin += win;
     }
+
+    bonusCount += lineSymbols.filter(s => s === "💰").length;
   });
 
-  return Math.floor(totalWin);
-}
-
-// Кнопка СПИН
-async function onSpinClick() {
-  if (spinning) return;
-  if (bet > balance && freeSpins <= 0) {
-    alert('Недостаточно средств для ставки!');
-    return;
+  if (bonusCount >= 3) {
+    totalWin += bet * 5;
+    freeSpins += Math.floor(Math.random() * 10) + 5;
+    message.textContent = "🎉 Бонус игра! + бесплатные спины!";
   }
-
-  spinning = true;
-  spinButton.disabled = true;
-  winMessage.textContent = '';
 
   if (freeSpins > 0) {
     freeSpins--;
+    freeSpinsDisplay.textContent = Бесплатные спины: ${freeSpins};
   } else {
-    balance -= bet;
-  }
-  updateUI();
-
-  await animateSpin();
-
-  const win = calculateWin();
-
-  if(win > 0) {
-    balance += win;
-    winMessage.textContent = `Вы выиграли ${formatNumberWithDots(win)}$! 🎉`;
-  } else {
-    winMessage.textContent = 'Удачи в следующий раз!';
+    freeSpinsDisplay.textContent = "";
   }
 
-  updateUI();
+  if (totalWin > 0) {
+    balance += totalWin;
+    message.textContent = 🎉 Выигрыш: ${totalWin.toLocaleString("ru-RU")} $;
+  } else if (bonusCount < 3) {
+    message.textContent = "Неудача!";
+  }
 
-  spinning = false;
-  spinButton.disabled = false;
+  updateBalance();
 }
 
-// Обработчики UI
-spinButton.addEventListener('click', onSpinClick);
-betInput.addEventListener('change', (e) => {
-  let val = Number(e.target.value);
-  if(val < 1) val = 1;
-  if(val > balance) val = balance;
-  bet = val;
-  updateUI();
-});
+// WILD?
+function isWild(sym) {
+  return sym === "🥈" || sym === "🥉";
+}
 
-updateUI();
+function delay(ms) {
+  return new Promise(res => setTimeout(res, ms));
+}
+
+updateBalance();
+spinButton.addEventListener("click", spin);
