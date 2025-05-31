@@ -12,7 +12,7 @@ body {
 }
 
 #app {
-  width: 360px;
+  width: 380px;
   background: #202b3a;
   border-radius: 15px;
   box-shadow: 0 0 15px #0ff;
@@ -44,6 +44,7 @@ header {
   gap: 10px;
   justify-content: center;
   margin-bottom: 15px;
+  user-select: none;
 }
 
 .symbol {
@@ -54,13 +55,17 @@ header {
   background: #122433;
   border-radius: 8px;
   box-shadow: 0 0 5px #00ffff66;
-  user-select: none;
-  /* Анимация */
-  transition: transform 0.4s ease-out;
+  transition: transform 0.5s ease-out;
+}
+
+#controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
 #spin-button {
-  width: 100%;
+  flex-grow: 1;
   padding: 12px;
   font-size: 1.2rem;
   font-weight: 700;
@@ -68,7 +73,6 @@ header {
   border: none;
   border-radius: 10px;
   cursor: pointer;
-  margin-bottom: 10px;
   color: #fff;
   text-shadow: 0 0 4px #0ff;
   user-select: none;
@@ -80,13 +84,13 @@ header {
 }
 
 #bet-input {
-  width: 100%;
+  width: 120px;
   padding: 8px;
   font-size: 1rem;
   border-radius: 8px;
   border: none;
-  margin-bottom: 10px;
   text-align: center;
+  color: #000;
 }
 
 #free-spins-container {
