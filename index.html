@@ -1,45 +1,83 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Слот-машина</title>
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dog House Slot Machine</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="https://emoji.gg/assets/emoji/9112-dog-face.png">
 </head>
 <body>
-  <div class="game-container">
-    <header>
-      <h1>🎰 Слот-машина</h1>
-      <div id="balance">Баланс: <span id="balance-amount">1.000.000.000</span> $</div>
-    </header>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo-title">
+                <span class="logo">🐶</span>
+                <h1>Dog House Slot</h1>
+            </div>
+            <div class="balance-container">
+                <span>Баланс:</span>
+                <span id="balance" class="balance">1.000.000.000</span>
+            </div>
+        </header>
 
-    <main>
-      <div class="slot-machine">
-        <div id="reels" class="reels"></div>
-      </div>
+        <!-- Main Game Area -->
+        <main class="main-game">
+            <!-- Slot Machine -->
+            <section class="slot-machine">
+                <div class="reels" id="reels">
+                    <!-- 5 reels x 3 rows, filled by JS -->
+                </div>
+                <div class="paylines-container">
+                    <button id="show-paylines" class="paylines-btn">Показать линии выплат</button>
+                </div>
+            </section>
 
-      <div class="controls">
-        <label for="bet">Ставка:</label>
-        <input type="number" id="bet" value="100000" step="100000" min="100000" max="100000000" />
-        <button id="spin-button">Крутить</button>
-      </div>
+            <!-- Controls -->
+            <section class="controls">
+                <div class="bet-controls">
+                    <button id="bet-minus" class="bet-btn">-</button>
+                    <span id="bet-amount" class="bet-amount">1.000.000</span>
+                    <button id="bet-plus" class="bet-btn">+</button>
+                </div>
+                <div class="main-buttons">
+                    <button id="spin-btn" class="main-btn">SPIN</button>
+                    <button id="autospin-btn" class="main-btn">AUTOSPIN</button>
+                    <button id="maxbet-btn" class="main-btn">MAX BET</button>
+                    <button id="buybonus-btn" class="main-btn">BUY BONUS</button>
+                </div>
+                <div class="info-controls">
+                    <button id="rules-btn" class="info-btn">Правила</button>
+                    <button id="history-btn" class="info-btn">История</button>
+                </div>
+            </section>
 
-      <div id="message" class="message"></div>
-      <div id="free-spins" class="free-spins"></div>
-    </main>
+            <!-- Win Display -->
+            <section class="win-display">
+                <span id="win-message" class="win-message"></span>
+            </section>
+        </main>
 
-    <section class="rules">
-      <h2>📜 Правила игры</h2>
-      <ul>
-        <li>20 линий выплат, выплаты слева направо.</li>
-        <li>WILD (🥈, 🥉) заменяют любые символы и умножают выигрыш на x2 или x3 соответственно.</li>
-        <li>💰 BONUS активирует бесплатные спины и даёт x5 к ставке.</li>
-        <li>3+ одинаковых символа подряд — выигрыш.</li>
-        <li>Во время бесплатных спинов WILD остаются на месте.</li>
-      </ul>
-    </section>
-  </div>
+        <!-- Sidebar: History & Paylines -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-content" id="sidebar-content">
+                <!-- Content filled dynamically (history, paylines, rules) -->
+            </div>
+            <button id="close-sidebar" class="close-sidebar">✖</button>
+        </aside>
 
-  <script src="script.js"></script>
+        <!-- Modal: Bonus/Freespins -->
+        <div class="modal" id="modal">
+            <div class="modal-content" id="modal-content">
+                <!-- Content filled dynamically -->
+            </div>
+            <button id="close-modal" class="close-modal">✖</button>
+        </div>
+
+        <!-- Notifications -->
+        <div class="notification" id="notification"></div>
+    </div>
+
+    <script src="main.js"></script>
 </body>
-</html>
+</html> 
