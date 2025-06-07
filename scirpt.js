@@ -1,6 +1,10 @@
 // Dog House Slot Machine — main.js
 // Масштабная логика для веб-слота с поддержкой всех правил и красивым UI
 
+document.addEventListener('DOMContentLoaded', function() {
+// Dog House Slot Machine — main.js
+// Масштабная логика для веб-слота с поддержкой всех правил и красивым UI
+
 // --- КОНСТАНТЫ ---
 const EMOJIS = [
     '🐶', '🤡', '😈', '👹', '👽', '🤖', '💀', '👻', '🤬', '😎', '🍔'
@@ -423,4 +427,5 @@ function init() {
     renderAll();
 }
 
-init(); 
+init();
+}); 
