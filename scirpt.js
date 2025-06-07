@@ -108,10 +108,10 @@ function closeSidebar() {
 
 // --- ОТРИСОВКА ---
 function renderBalance() {
-    balanceEl.textContent = formatNumber(state.balance);
+    balanceEl.textContent = '$' + formatNumber(state.balance);
 }
 function renderBet() {
-    betAmountEl.textContent = formatNumber(state.bet);
+    betAmountEl.textContent = '$' + formatNumber(state.bet);
 }
 function renderReels() {
     reelsEl.innerHTML = '';
@@ -128,7 +128,7 @@ function renderReels() {
 }
 function renderWinMessage(win, lines) {
     if (win > 0) {
-        winMessageEl.textContent = `Выигрыш: +${formatNumber(win)}`;
+        winMessageEl.textContent = `Выигрыш: +$${formatNumber(win)}`;
         winMessageEl.style.color = 'var(--win)';
     } else {
         winMessageEl.textContent = '';
