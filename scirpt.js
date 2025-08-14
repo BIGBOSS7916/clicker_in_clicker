@@ -11,8 +11,8 @@ const EMOJIS = [
 ];
 const WILD_INDEXES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // Индексы для WILD (можно расширить)
 const BONUS_INDEX = 0; // Индекс для BONUS (будет отдельный символ)
-const WILD_EMOJI = '🐶'; // WILD символ
-const BONUS_EMOJI = '🍔'; // BONUS символ
+const WILD_EMOJI = '🥈'; // WILD символ (серебряная медаль)
+const BONUS_EMOJI = '💰'; // BONUS символ (мешок с деньгами)
 const REELS = 5;
 const ROWS = 3;
 const PAYLINES = [
@@ -62,6 +62,7 @@ let state = {
     win: 0,
     lastWinLines: [],
     bonusActive: false,
+    autospinActive: false, // Флаг для отслеживания активного автоповтора
 };
 
 // --- ЭЛЕМЕНТЫ DOM ---
@@ -90,6 +91,193 @@ const closeModalBtn = document.getElementById('close-modal');
 function formatNumber(num) {
     return num.toLocaleString('ru-RU').replace(/\s/g, '.').replace(/,/g, '.');
 }
+
+// --- АНИМАЦИЯ ВРАЩЕНИЯ БАРАБАНОВ ---
+function startReelSpin() {
+    const cells = document.querySelectorAll('.reel-cell');
+    cells.forEach((cell, index) => {
+        const col = parseInt(cell.dataset.col);
+        const speedClass = getSpeedClass(col);
+        cell.classList.add('spinning', speedClass);
+    });
+    
+    // Звуковой эффект начала вращения
+    playSpinSound();
+}
+
+// --- ЗВУКОВЫЕ ЭФФЕКТЫ ---
+function playSpinSound() {
+    // Создаем простой звуковой эффект с помощью Web Audio API
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.1);
+        
+        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.1);
+    } catch (e) {
+        // Игнорируем ошибки звука
+    }
+}
+
+function playWinSound() {
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.2);
+        
+        gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.2);
+    } catch (e) {
+        // Игнорируем ошибки звука
+    }
+}
+
+function createWinParticles() {
+    const container = document.querySelector('.slot-machine');
+    const rect = container.getBoundingClientRect();
+    
+    for (let i = 0; i < 20; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        
+        // Случайная позиция в области слотов
+        const x = Math.random() * rect.width;
+        const y = Math.random() * rect.height;
+        
+        // Случайное направление полета
+        const tx = (Math.random() - 0.5) * 200;
+        const ty = (Math.random() - 0.5) * 200;
+        
+        particle.style.left = x + 'px';
+        particle.style.top = y + 'px';
+        particle.style.setProperty('--tx', tx + 'px');
+        particle.style.setProperty('--ty', ty + 'px');
+        
+        container.appendChild(particle);
+        
+        // Удаляем частицу после анимации
+        setTimeout(() => {
+            if (particle.parentNode) {
+                particle.parentNode.removeChild(particle);
+            }
+        }, 1000);
+    }
+}
+
+// --- УПРАВЛЕНИЕ АВТОПОВТОРОМ ---
+function startAutospin() {
+    if (state.autospinActive) return; // Уже запущен
+    
+    state.autospin = true;
+    state.autospinCount = AUTOSPIN_LIMIT;
+    state.autospinActive = true;
+    
+    // Обновляем внешний вид кнопки
+    autospinBtn.textContent = `AUTOSPIN (${state.autospinCount})`;
+    autospinBtn.classList.add('autospin-active');
+    
+    showNotification(`Автоповтор запущен: ${state.autospinCount} спинов`);
+    spin();
+}
+
+function stopAutospin() {
+    state.autospin = false;
+    state.autospinCount = 0;
+    state.autospinActive = false;
+    
+    // Обновляем внешний вид кнопки
+    autospinBtn.textContent = 'AUTOSPIN';
+    autospinBtn.classList.remove('autospin-active');
+    
+    showNotification('Автоповтор остановлен');
+}
+
+function updateAutospinDisplay() {
+    if (state.autospinActive && state.autospinCount > 0) {
+        autospinBtn.textContent = `AUTOSPIN (${state.autospinCount})`;
+    } else {
+        autospinBtn.textContent = 'AUTOSPIN';
+    }
+}
+
+function getSpeedClass(col) {
+    // Разные скорости для разных барабанов
+    const speeds = ['spinning-fast', 'spinning-medium', 'spinning-slow', 'spinning-medium', 'spinning-fast'];
+    return speeds[col] || 'spinning-medium';
+}
+
+function stopReelSpin() {
+    const cells = document.querySelectorAll('.reel-cell');
+    cells.forEach((cell, index) => {
+        const col = parseInt(cell.dataset.col);
+        const stopDelay = getStopDelay(col);
+        
+        setTimeout(() => {
+            cell.classList.remove('spinning', 'spinning-fast', 'spinning-medium', 'spinning-slow');
+            cell.classList.add('stopping');
+            
+            setTimeout(() => {
+                cell.classList.remove('stopping');
+            }, 500);
+        }, stopDelay);
+    });
+}
+
+function getStopDelay(col) {
+    // Барабаны останавливаются в разное время (слева направо)
+    const delays = [800, 1200, 1600, 2000, 2400];
+    return delays[col] || 1600;
+}
+
+function updateReelSymbols(newReels) {
+    const cells = document.querySelectorAll('.reel-cell');
+    cells.forEach((cell) => {
+        const col = parseInt(cell.dataset.col);
+        const row = parseInt(cell.dataset.row);
+        const symbol = newReels[col][row];
+        
+        // Обновляем символ после остановки анимации
+        setTimeout(() => {
+            cell.className = 'reel-cell';
+            
+            if (symbol.type === 'wild') cell.classList.add('wild');
+            if (symbol.type === 'bonus') cell.classList.add('bonus');
+            if (symbol.win) cell.classList.add('win');
+            
+            // Добавляем специальный класс для sticky wilds в бонусном режиме
+            if (state.inBonus && state.stickyWilds.some(w => w.col === col && w.row === row)) {
+                cell.classList.add('sticky-wild');
+            }
+            
+            // Добавляем множитель для WILD символов
+            let multiplierHtml = '';
+            if (symbol.type === 'wild' && symbol.multiplier && symbol.multiplier > 1) {
+                multiplierHtml = `<div class="wild-multiplier">x${symbol.multiplier}</div>`;
+            }
+            
+            cell.innerHTML = symbol.emoji + multiplierHtml;
+        }, getStopDelay(col) + 500);
+    });
+}
 function showNotification(msg, timeout = 2500) {
     notificationEl.textContent = msg;
     notificationEl.classList.add('show');
@@ -108,6 +296,12 @@ function openSidebar(html) {
 }
 function closeSidebar() {
     sidebar.classList.remove('open');
+    // Очищаем содержимое sidebar после закрытия
+    setTimeout(() => {
+        if (!sidebar.classList.contains('open')) {
+            sidebarContent.innerHTML = '';
+        }
+    }, 300);
 }
 
 // --- ОТРИСОВКА ---
@@ -126,7 +320,19 @@ function renderReels() {
             if (symbol.type === 'wild') cellClass += ' wild';
             if (symbol.type === 'bonus') cellClass += ' bonus';
             if (symbol.win) cellClass += ' win';
-            reelsEl.innerHTML += `<div class="${cellClass}" data-col="${col}" data-row="${row}">${symbol.emoji}</div>`;
+            
+            // Добавляем класс для sticky wilds в бонусном режиме
+            if (state.inBonus && state.stickyWilds.some(w => w.col === col && w.row === row)) {
+                cellClass += ' sticky-wild';
+            }
+            
+            // Добавляем множитель для WILD символов
+            let multiplierHtml = '';
+            if (symbol.type === 'wild' && symbol.multiplier && symbol.multiplier > 1) {
+                multiplierHtml = `<div class="wild-multiplier">x${symbol.multiplier}</div>`;
+            }
+            
+            reelsEl.innerHTML += `<div class="${cellClass}" data-col="${col}" data-row="${row}">${symbol.emoji}${multiplierHtml}</div>`;
         }
     }
 }
@@ -143,12 +349,13 @@ function renderWinMessage(win, lines) {
 function getRandomSymbol(col, row, inBonus = false) {
     // WILD только на 2,3,4 барабанах
     if (inBonus && state.stickyWilds.some(w => w.col === col && w.row === row)) {
-        return { emoji: WILD_EMOJI, type: 'wild', multiplier: 1 };
+        return { emoji: '🥈', type: 'wild', multiplier: 1 };
     }
-    if (col >= 1 && col <= 3 && Math.random() < 0.12) {
-        // 12% шанс WILD
+    if (col >= 1 && col <= 3 && Math.random() < 0.03) {
+        // 3% шанс WILD (уменьшено с 12%)
         const multiplier = Math.random() < 0.5 ? 2 : 3;
-        return { emoji: WILD_EMOJI, type: 'wild', multiplier };
+        const wildEmoji = multiplier === 2 ? '🥈' : '🥉'; // Серебряная для x2, бронзовая для x3
+        return { emoji: wildEmoji, type: 'wild', multiplier };
     }
     // BONUS только на 1,3,5 барабанах
     if (!inBonus && (col === 0 || col === 2 || col === 4) && Math.random() < 0.08) {
@@ -253,6 +460,7 @@ function spinBonus() {
         setTimeout(closeModal, 2500);
         return;
     }
+    
     // Генерируем слоты с учетом sticky wilds
     let reels = [];
     for (let col = 0; col < REELS; col++) {
@@ -260,11 +468,17 @@ function spinBonus() {
         for (let row = 0; row < ROWS; row++) {
             // Если sticky wild — всегда wild
             if (state.stickyWilds.some(w => w.col === col && w.row === row)) {
-                reel.push({ emoji: WILD_EMOJI, type: 'wild', multiplier: 2 });
-            } else if (col >= 1 && col <= 3 && Math.random() < 0.18) {
-                // 18% шанс нового sticky wild
-                state.stickyWilds.push({ col, row });
-                reel.push({ emoji: WILD_EMOJI, type: 'wild', multiplier: 2 });
+                reel.push({ emoji: '🥈', type: 'wild', multiplier: 2 });
+            } else if (col >= 1 && col <= 3 && state.stickyWilds.length < 6) {
+                // Прогрессивный шанс нового sticky wild в зависимости от количества существующих
+                const baseChance = 0.08; // 8% базовый шанс
+                const existingWilds = state.stickyWilds.length;
+                const adjustedChance = baseChance * Math.pow(0.7, existingWilds); // Уменьшается с каждым wild
+                
+                if (Math.random() < adjustedChance) {
+                    state.stickyWilds.push({ col, row });
+                    reel.push({ emoji: '🥈', type: 'wild', multiplier: 2 });
+                }
             } else {
                 // Обычный символ
                 const idx = Math.floor(Math.random() * EMOJIS.length);
@@ -273,16 +487,45 @@ function spinBonus() {
         }
         reels.push(reel);
     }
-    state.reels = reels;
-    // Проверяем выигрышные линии
-    let { totalWin, winLines } = checkPaylines(reels, state.bet);
-    state.balance += totalWin;
-    state.win += totalWin;
-    state.lastWinLines = winLines;
-    renderAll();
-    renderWinMessage(totalWin, winLines);
-    state.freeSpins--;
-    setTimeout(spinBonus, 1800);
+    
+    // Начинаем анимацию вращения
+    startReelSpin();
+    
+    // Анимация кнопки SPIN
+    spinBtn.classList.add('spinning');
+    setTimeout(() => spinBtn.classList.remove('spinning'), 3000);
+    
+    // Останавливаем вращение и показываем результаты
+    setTimeout(() => {
+        stopReelSpin();
+        updateReelSymbols(reels);
+        
+        // Обновляем состояние
+        state.reels = reels;
+        
+        // Проверяем выигрышные линии
+        let { totalWin, winLines } = checkPaylines(reels, state.bet);
+        state.balance += totalWin;
+        state.win += totalWin;
+        state.lastWinLines = winLines;
+        
+        // Показываем выигрышные линии через некоторое время
+        setTimeout(() => {
+            renderReels(); // Перерисовываем с подсветкой выигрышных линий
+            
+            // Показываем выигрыш только после полной остановки барабанов
+            renderWinMessage(totalWin, winLines);
+            
+            // Звуковой эффект при выигрыше
+            if (totalWin > 0) {
+                playWinSound();
+                createWinParticles();
+            }
+        }, 2800);
+        
+        state.freeSpins--;
+        setTimeout(spinBonus, 3500); // Увеличиваем задержку для бонусных спинов
+    }, 100);
 }
 
 // --- ОСНОВНОЙ СПИН ---
@@ -290,51 +533,114 @@ function spin() {
     if (state.inBonus || state.bonusActive) return;
     if (state.balance < state.bet) {
         showNotification('Недостаточно средств!');
+        if (state.autospinActive) {
+            stopAutospin();
+        }
         return;
     }
+    
     state.balance -= state.bet;
-    state.reels = spinReels();
-    // Проверяем бонус
-    if (checkBonus(state.reels)) {
-        // x5 от ставки + бонус
-        let win = state.bet * BONUS_WIN_MULTIPLIER;
-        state.balance += win;
-        state.win = win;
-        renderAll();
-        renderWinMessage(win, []);
-        setTimeout(startBonus, 1800);
-        return;
-    }
-    // Проверяем выигрышные линии
-    let { totalWin, winLines } = checkPaylines(state.reels, state.bet);
-    state.balance += totalWin;
-    state.win = totalWin;
-    state.lastWinLines = winLines;
-    // Добавляем в историю
-    state.history.unshift({
-        time: new Date().toLocaleTimeString(),
-        bet: state.bet,
-        win: totalWin,
-        lines: winLines
-    });
-    if (state.history.length > 50) state.history.pop();
-    renderAll();
-    renderWinMessage(totalWin, winLines);
-    if (state.autospin && state.autospinCount > 0) {
-        state.autospinCount--;
-        setTimeout(spin, 1200);
-    } else {
-        state.autospin = false;
-    }
+    renderBalance();
+    
+    // Генерируем новые символы
+    const newReels = spinReels();
+    
+    // Начинаем анимацию вращения
+    startReelSpin();
+    
+    // Анимация кнопки SPIN
+    spinBtn.classList.add('spinning');
+    setTimeout(() => spinBtn.classList.remove('spinning'), 3000);
+    
+    // Останавливаем вращение и показываем результаты
+    setTimeout(() => {
+        stopReelSpin();
+        updateReelSymbols(newReels);
+        
+        // Обновляем состояние
+        state.reels = newReels;
+        
+        // Проверяем бонус
+        if (checkBonus(state.reels)) {
+            // Останавливаем автоповтор при бонусе
+            if (state.autospinActive) {
+                stopAutospin();
+            }
+            
+            // x5 от ставки + бонус
+            let win = state.bet * BONUS_WIN_MULTIPLIER;
+            state.balance += win;
+            state.win = win;
+            
+            // Показываем выигрыш бонуса через некоторое время
+            setTimeout(() => {
+                renderWinMessage(win, []);
+                if (win > 0) {
+                    playWinSound();
+                    createWinParticles();
+                }
+            }, 2800);
+            
+            setTimeout(startBonus, 1800);
+            return;
+        }
+        
+        // Проверяем выигрышные линии
+        let { totalWin, winLines } = checkPaylines(state.reels, state.bet);
+        state.balance += totalWin;
+        state.win = totalWin;
+        state.lastWinLines = winLines;
+        
+        // Добавляем в историю
+        state.history.unshift({
+            time: new Date().toLocaleTimeString(),
+            bet: state.bet,
+            win: totalWin,
+            lines: winLines
+        });
+        if (state.history.length > 50) state.history.pop();
+        
+        // Показываем выигрышные линии через некоторое время
+        setTimeout(() => {
+            renderReels(); // Перерисовываем с подсветкой выигрышных линий
+            
+            // Показываем выигрыш только после полной остановки барабанов
+            renderWinMessage(totalWin, winLines);
+            
+            // Звуковой эффект при выигрыше
+            if (totalWin > 0) {
+                playWinSound();
+                createWinParticles();
+            }
+        }, 2800);
+        
+        if (state.autospin && state.autospinCount > 0) {
+            state.autospinCount--;
+            updateAutospinDisplay();
+            
+            if (state.autospinCount > 0) {
+                setTimeout(spin, 3500); // Увеличиваем задержку для автоповтора
+            } else {
+                stopAutospin(); // Автоповтор закончился
+            }
+        } else {
+            state.autospin = false;
+        }
+    }, 100);
 }
 
 // --- КНОПКИ И СОБЫТИЯ ---
 spinBtn.onclick = () => spin();
 autospinBtn.onclick = () => {
     if (state.inBonus || state.bonusActive) return;
-    state.autospin = true;
-    state.autospinCount = AUTOSPIN_LIMIT;
-    spin();
+    
+    if (state.autospinActive) {
+        // Если автоповтор уже активен - останавливаем его
+        stopAutospin();
+    } else {
+        // Запускаем автоповтор
+        startAutospin();
+    }
 };
 maxbetBtn.onclick = () => {
     state.bet = Math.min(state.balance, MAX_BET);
@@ -347,6 +653,12 @@ buybonusBtn.onclick = () => {
         showNotification('Недостаточно средств для покупки бонуса!');
         return;
     }
+    
+    // Останавливаем автоповтор при покупке бонуса
+    if (state.autospinActive) {
+        stopAutospin();
+    }
+    
     state.balance -= price;
     state.win = 0;
     renderAll();
@@ -372,47 +684,243 @@ showPaylinesBtn.onclick = () => {
 closeSidebarBtn.onclick = closeSidebar;
 closeModalBtn.onclick = closeModal;
 
+// Закрытие sidebar по клику вне его области
+document.addEventListener('click', (e) => {
+    if (sidebar.classList.contains('open') && 
+        !sidebar.contains(e.target) && 
+        !showPaylinesBtn.contains(e.target) && 
+        !rulesBtn.contains(e.target) && 
+        !historyBtn.contains(e.target)) {
+        closeSidebar();
+    }
+});
+
+// Закрытие sidebar по клавише Escape
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        if (state.autospinActive) {
+            stopAutospin();
+        }
+        if (sidebar.classList.contains('open')) {
+            closeSidebar();
+        }
+        if (modal.classList.contains('open')) {
+            closeModal();
+        }
+    }
+});
+
 // --- РЕНДЕР ПРАВИЛ, ЛИНИЙ, ИСТОРИИ ---
 function renderRules() {
     return `
-    <h2>Правила игры</h2>
-    <ul style="font-size:1.1rem;line-height:1.6;">
-        <li>Символы: ${EMOJIS.join(' ')}, WILD: ${WILD_EMOJI}, BONUS: ${BONUS_EMOJI}</li>
-        <li>WILD заменяет все символы кроме BONUS, только на барабанах 2,3,4</li>
-        <li>WILD может иметь множители x2/x3, применяется к выигрышу на линии</li>
-        <li>Множители WILD на линии суммируются</li>
-        <li>BONUS появляется только на барабанах 1,3,5</li>
-        <li>3 BONUS = x5 от ставки + запуск бонуски (фриспины)</li>
-        <li>Во время бонуски WILD остаются на месте до конца бонуски</li>
-        <li>Во время бонуски символы BONUS не выпадают</li>
-        <li>Выплаты по линиям — только слева направо, начиная с крайнего левого барабана</li>
-        <li>Максимум 20 линий выплат</li>
-    </ul>
-    <h3>Таблица выплат</h3>
-    <table style="width:100%;font-size:1.1rem;text-align:center;">
-        <tr><th>Символ</th><th>5</th><th>4</th><th>3</th></tr>
-        ${EMOJIS.map((e,i)=>`<tr><td>${e}</td><td>x${PAYTABLE[i][0]}</td><td>x${PAYTABLE[i][1]}</td><td>x${PAYTABLE[i][2]}</td></tr>`).join('')}
-    </table>
+    <div class="rules-container">
+        <div class="rules-header">
+            <h2>📋 Правила игры</h2>
+            <p class="rules-subtitle">Изучите все возможности слота Dog House</p>
+        </div>
+
+        <div class="rules-section">
+            <div class="rule-card">
+                <div class="rule-icon">🎰</div>
+                <div class="rule-content">
+                    <h3>Символы игры</h3>
+                    <div class="symbols-grid">
+                        ${EMOJIS.map(emoji => `<span class="symbol-item">${emoji}</span>`).join('')}
+                        <span class="symbol-item wild-symbol">🥈</span>
+                        <span class="symbol-item wild-symbol">🥉</span>
+                        <span class="symbol-item bonus-symbol">${BONUS_EMOJI}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="rules-section">
+            <div class="rule-card">
+                <div class="rule-icon">🥈</div>
+                <div class="rule-content">
+                    <h3>WILD символы</h3>
+                    <ul class="rule-list">
+                        <li>Эти символы — WILD, и они могут заменять все символы на линии, кроме ${BONUS_EMOJI}</li>
+                        <li>Символы WILD присутствуют только на барабанах 2, 3, 4</li>
+                        <li>Могут иметь множители х2 или х3</li>
+                        <li>Множитель WILD применяется к выигрышу на линии, в которой символ WILD используется</li>
+                        <li>Если на линии используется больше одного символа WILD, множители всех символов WILD на данной линии суммируются</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="rules-section">
+            <div class="rule-card">
+                <div class="rule-icon">${BONUS_EMOJI}</div>
+                <div class="rule-content">
+                    <h3>BONUS символы</h3>
+                    <ul class="rule-list">
+                        <li>Этот символ — BONUS. Он появляется только на барабанах 1, 3 и 5</li>
+                        <li>Выбейте 3 символа BONUS, чтобы выиграть х5 от ставки и запустить БОНУСКУ</li>
+                        <li>Во время бонуски WILD остаются на месте до конца бонуски</li>
+                        <li>Во время бонуски символы BONUS не выпадают</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="rules-section">
+            <div class="rule-card">
+                <div class="rule-icon">💰</div>
+                <div class="rule-content">
+                    <h3>Выплаты</h3>
+                    <ul class="rule-list">
+                        <li>Выплаты по линиям — только слева направо, начиная с крайнего левого барабана</li>
+                        <li>Максимум 20 линий выплат</li>
+                        <li>Минимум 3 символа для выигрыша</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="rules-section">
+            <div class="rule-card paytable-card">
+                <div class="rule-icon">📊</div>
+                <div class="rule-content">
+                    <h3>Таблица выплат</h3>
+                    <div class="paytable-container">
+                        <table class="paytable">
+                            <thead>
+                                <tr>
+                                    <th>Символ</th>
+                                    <th>5 символов</th>
+                                    <th>4 символа</th>
+                                    <th>3 символа</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${EMOJIS.map((emoji, i) => `
+                                    <tr class="paytable-row">
+                                        <td class="symbol-cell">${emoji}</td>
+                                        <td class="win-cell">x${PAYTABLE[i][0]}</td>
+                                        <td class="win-cell">x${PAYTABLE[i][1]}</td>
+                                        <td class="win-cell">x${PAYTABLE[i][2]}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     `;
 }
 function renderPaylines() {
     return `
-    <h2>Линии выплат</h2>
-    <div style="display:grid;grid-template-columns:repeat(5,32px);gap:2px;margin:12px 0;">
-        ${Array(15).fill(0).map((_,i)=>`<div style="width:32px;height:32px;background:#444;border-radius:6px;"></div>`).join('')}
+    <div class="paylines-container">
+        <div class="paylines-header">
+            <h2>🎯 Линии выплат</h2>
+            <p class="paylines-subtitle">В игре присутствует 20 выигрышных линий</p>
+        </div>
+
+        <div class="paylines-grid">
+            ${PAYLINES.map((line, i) => `
+                <div class="payline-item">
+                    <div class="payline-number">Линия ${i + 1}</div>
+                    <div class="payline-visual">
+                        ${Array(3).fill(0).map((_, row) => 
+                            Array(5).fill(0).map((_, col) => {
+                                const isActive = line[col] === row;
+                                return `<div class="payline-cell ${isActive ? 'active' : ''}"></div>`;
+                            }).join('')
+                        ).join('')}
+                    </div>
+                    <div class="payline-info">
+                        <p>Выигрышная линия ${i + 1}</p>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+
+        <div class="paylines-info">
+            <div class="info-card">
+                <div class="info-icon">ℹ️</div>
+                <div class="info-content">
+                    <h3>Как работают линии</h3>
+                    <p>Все выплаты осуществляются при выпадении символов непрерывно слева направо по выигрышным линиям, начиная с крайнего левого барабана.</p>
+                </div>
+            </div>
+        </div>
     </div>
-    <ol style="font-size:1.1rem;line-height:1.5;">
-        ${PAYLINES.map((line,i)=>`<li>Линия ${i+1}: ${line.join('-')}</li>`).join('')}
-    </ol>
     `;
 }
 function renderHistory() {
     return `
-    <h2>История игр</h2>
-    <table style="width:100%;font-size:1.1rem;text-align:center;">
-        <tr><th>Время</th><th>Ставка</th><th>Выигрыш</th><th>Линии</th></tr>
-        ${state.history.map(h=>`<tr><td>${h.time}</td><td>${formatNumber(h.bet)}</td><td style="color:${h.win>0?'#00e676':'#fff'};font-weight:700;">${formatNumber(h.win)}</td><td>${h.lines.map(l=>l.line).join(', ')}</td></tr>`).join('')}
-    </table>
+    <div class="history-container">
+        <div class="history-header">
+            <h2>📈 История игр</h2>
+            <p class="history-subtitle">Ваши последние результаты</p>
+        </div>
+
+        ${state.history.length === 0 ? `
+            <div class="empty-history">
+                <div class="empty-icon">🎰</div>
+                <h3>История пуста</h3>
+                <p>Сделайте первую ставку, чтобы увидеть историю игр</p>
+            </div>
+        ` : `
+            <div class="history-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">🎯</div>
+                    <div class="stat-content">
+                        <div class="stat-value">${state.history.length}</div>
+                        <div class="stat-label">Всего игр</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-content">
+                        <div class="stat-value">${formatNumber(state.history.reduce((sum, h) => sum + h.win, 0))}</div>
+                        <div class="stat-label">Общий выигрыш</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🏆</div>
+                    <div class="stat-content">
+                        <div class="stat-value">${state.history.filter(h => h.win > 0).length}</div>
+                        <div class="stat-label">Выигрышных игр</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="history-list">
+                ${state.history.map((h, index) => `
+                    <div class="history-item ${h.win > 0 ? 'win' : 'loss'}">
+                        <div class="history-time">
+                            <div class="time-icon">🕐</div>
+                            <div class="time-text">${h.time}</div>
+                        </div>
+                        <div class="history-details">
+                            <div class="bet-info">
+                                <span class="bet-label">Ставка:</span>
+                                <span class="bet-amount">${formatNumber(h.bet)}</span>
+                            </div>
+                            <div class="win-info">
+                                <span class="win-label">Выигрыш:</span>
+                                <span class="win-amount ${h.win > 0 ? 'positive' : 'negative'}">${formatNumber(h.win)}</span>
+                            </div>
+                            ${h.lines.length > 0 ? `
+                                <div class="lines-info">
+                                    <span class="lines-label">Линии:</span>
+                                    <span class="lines-numbers">${h.lines.map(l => l.line).join(', ')}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="history-status">
+                            ${h.win > 0 ? '🎉' : '😔'}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `}
+    </div>
     `;
 }
 
@@ -422,9 +930,234 @@ function renderAll() {
     renderBet();
     renderReels();
 }
+
+// --- РАДИО ПЛЕЕР ---
+function initRadioPlayer() {
+    const audio = document.getElementById('radio-audio');
+    const playPauseBtn = document.getElementById('play-pause-btn');
+    const muteBtn = document.getElementById('mute-btn');
+    const volumeSlider = document.getElementById('volume-slider');
+    // const progressBar = document.querySelector('.progress-bar');
+    // const progressFill = document.querySelector('.progress-fill');
+    // const currentTimeEl = document.querySelector('.current-time');
+    // const totalTimeEl = document.querySelector('.total-time');
+    const trackTitleEl = document.querySelector('.track-title');
+    const trackArtistEl = document.querySelector('.track-artist');
+
+    let isPlaying = false;
+    let isMuted = false;
+    let lastVolume = 70;
+
+    // Функция форматирования времени (не используется для радио)
+    // function formatTime(seconds) {
+    //     const mins = Math.floor(seconds / 60);
+    //     const secs = Math.floor(seconds % 60);
+    //     return `${mins}:${secs.toString().padStart(2, '0')}`;
+    // }
+
+    // Обновление прогресса (не используется для радио)
+    // function updateProgress() {
+    //     if (audio.duration) {
+    //         const progress = (audio.currentTime / audio.duration) * 100;
+    //         progressFill.style.width = `${progress}%`;
+    //         currentTimeEl.textContent = formatTime(audio.currentTime);
+    //     }
+    // }
+
+    // Обновление времени (не используется для радио)
+    // function updateTime() {
+    //     if (audio.duration && !isNaN(audio.duration)) {
+    //         totalTimeEl.textContent = formatTime(audio.duration);
+    //     } else {
+    //         totalTimeEl.textContent = '0:00';
+    //     }
+    // }
+
+    // Обработчик кнопки воспроизведения/паузы
+    playPauseBtn.addEventListener('click', () => {
+        if (isPlaying) {
+            // Останавливаем поток радио
+            audio.pause();
+            playPauseBtn.classList.remove('playing');
+            playPauseBtn.querySelector('.btn-icon').textContent = '▶';
+            isPlaying = false;
+        } else {
+            // Принудительно перезагружаем источник для получения нового потока
+            const currentSrc = audio.src;
+            console.log('Попытка воспроизведения радио с источником:', currentSrc);
+            
+            audio.src = '';
+            audio.load();
+            audio.src = currentSrc;
+            
+            // Запускаем радио заново (будет новый поток)
+            audio.play().then(() => {
+                console.log('Радио успешно запущено');
+                playPauseBtn.classList.add('playing');
+                playPauseBtn.querySelector('.btn-icon').textContent = '⏸';
+                isPlaying = true;
+                // Восстанавливаем громкость
+                audio.volume = lastVolume / 100;
+            }).catch(error => {
+                console.error('Ошибка воспроизведения радио:', error);
+                console.error('Тип ошибки:', error.name);
+                console.error('Сообщение ошибки:', error.message);
+                
+                // Показываем уведомление только если это не автозапуск
+                if (isPlaying === false) {
+                    let errorMessage = 'Ошибка воспроизведения радио. ';
+                    if (error.name === 'NotAllowedError') {
+                        errorMessage += 'Разрешите воспроизведение звука в браузере.';
+                    } else if (error.name === 'NotSupportedError') {
+                        errorMessage += 'Формат аудио не поддерживается.';
+                    } else if (error.name === 'NetworkError') {
+                        errorMessage += 'Проблема с сетью. Проверьте подключение.';
+                    } else {
+                        errorMessage += 'Попробуйте еще раз.';
+                    }
+                    showNotification(errorMessage, 5000);
+                }
+            });
+        }
+    });
+
+    // Обработчик кнопки звука
+    muteBtn.addEventListener('click', () => {
+        if (isMuted) {
+            audio.volume = lastVolume / 100;
+            muteBtn.classList.remove('muted');
+            muteBtn.querySelector('.btn-icon').textContent = '🔊';
+            volumeSlider.value = lastVolume;
+        } else {
+            lastVolume = audio.volume * 100;
+            audio.volume = 0;
+            muteBtn.classList.add('muted');
+            muteBtn.querySelector('.btn-icon').textContent = '🔈';
+            volumeSlider.value = 0;
+        }
+        isMuted = !isMuted;
+    });
+
+    // Обработчик слайдера громкости
+    volumeSlider.addEventListener('input', (e) => {
+        const volume = e.target.value / 100;
+        audio.volume = volume;
+        lastVolume = e.target.value;
+        
+        if (volume === 0) {
+            muteBtn.classList.add('muted');
+            muteBtn.querySelector('.btn-icon').textContent = '🔈';
+            isMuted = true;
+        } else {
+            muteBtn.classList.remove('muted');
+            muteBtn.querySelector('.btn-icon').textContent = '🔊';
+            isMuted = false;
+        }
+        
+        // Если радио на паузе и увеличиваем громкость, то запускаем заново
+        if (!isPlaying && volume > 0) {
+            // Принудительно перезагружаем источник для получения нового потока
+            const currentSrc = audio.src;
+            audio.src = '';
+            audio.load();
+            audio.src = currentSrc;
+            
+            audio.play().then(() => {
+                console.log('Радио запущено через слайдер громкости');
+                isPlaying = true;
+                playPauseBtn.classList.add('playing');
+                playPauseBtn.querySelector('.btn-icon').textContent = '⏸';
+            }).catch(error => {
+                console.error('Ошибка воспроизведения через слайдер громкости:', error);
+                // Не показываем уведомление при изменении громкости
+            });
+        }
+    });
+
+    // Обработчик клика по прогресс-бару (отключен для радио)
+    // progressBar.addEventListener('click', (e) => {
+    //     const rect = progressBar.getBoundingClientRect();
+    //     const clickX = e.clientX - rect.left;
+    //     const progressWidth = rect.width;
+    //     const clickPercent = clickX / progressWidth;
+    //     
+    //     if (audio.duration && !isNaN(audio.duration)) {
+    //         audio.currentTime = clickPercent * audio.duration;
+    //     }
+    // });
+
+    // События аудио
+    // audio.addEventListener('loadedmetadata', updateTime);
+    // audio.addEventListener('timeupdate', updateProgress);
+    audio.addEventListener('ended', () => {
+        isPlaying = false;
+        playPauseBtn.classList.remove('playing');
+        playPauseBtn.querySelector('.btn-icon').textContent = '▶';
+    });
+
+    audio.addEventListener('play', () => {
+        isPlaying = true;
+        playPauseBtn.classList.add('playing');
+        playPauseBtn.querySelector('.btn-icon').textContent = '⏸';
+    });
+
+    audio.addEventListener('pause', () => {
+        isPlaying = false;
+        playPauseBtn.classList.remove('playing');
+        playPauseBtn.querySelector('.btn-icon').textContent = '▶';
+    });
+
+    audio.addEventListener('error', (e) => {
+        console.error('Ошибка загрузки аудио:', e);
+        console.error('Код ошибки:', audio.error ? audio.error.code : 'неизвестно');
+        console.error('Сообщение ошибки:', audio.error ? audio.error.message : 'неизвестно');
+        
+        let errorMessage = 'Ошибка загрузки радиостанции. ';
+        if (audio.error) {
+            switch(audio.error.code) {
+                case 1:
+                    errorMessage += 'Загрузка прервана.';
+                    break;
+                case 2:
+                    errorMessage += 'Ошибка сети.';
+                    break;
+                case 3:
+                    errorMessage += 'Формат не поддерживается.';
+                    break;
+                case 4:
+                    errorMessage += 'Источник недоступен.';
+                    break;
+                default:
+                    errorMessage += 'Неизвестная ошибка.';
+            }
+        }
+        showNotification(errorMessage, 5000);
+    });
+
+    // Установка начальной громкости
+    audio.volume = 0.7;
+    volumeSlider.value = 70;
+    lastVolume = 70;
+    
+    // Не запускаем радио автоматически (браузеры блокируют автозапуск)
+    // Радио запустится при первом клике на кнопку воспроизведения
+    isPlaying = false;
+    playPauseBtn.classList.remove('playing');
+    playPauseBtn.querySelector('.btn-icon').textContent = '▶';
+
+    // Обновление информации о треке
+    function updateTrackInfo() {
+        trackTitleEl.textContent = 'BBR FM';
+        trackArtistEl.textContent = 'BBR FM лучшее танцевальное радио страны, современные хиты каждый день!';
+    }
+
+    updateTrackInfo();
+}
+
 function init() {
     state.reels = spinReels();
     renderAll();
+    initRadioPlayer();
 }
 
 init();
