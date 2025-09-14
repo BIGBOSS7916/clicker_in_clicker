@@ -10,9 +10,8 @@ const EMOJIS = [
     '🐶', '🤡', '😈', '👹', '👽', '🤖', '💀', '👻', '🤬', '😎', '🍔'
 ];
 
-// API Configuration
-const API_BASE_URL = window.API_CONFIG ? window.API_CONFIG.current : 'http://localhost:5000/api';
-const SYNC_INTERVAL = 30000; // Синхронизация каждые 30 секунд
+// Локальная версия - API отключен
+const LOCAL_MODE = window.LOCAL_MODE || true;
 
 // Локальная база данных пользователей
 let localUsersDB = null;
@@ -131,12 +130,12 @@ async function loadLocalUsersDB() {
     return false;
 }
 
-// --- API ФУНКЦИИ ---
+// --- ЛОКАЛЬНЫЕ ФУНКЦИИ (без API) ---
 async function fetchUserBalance(userId) {
     console.log('Поиск пользователя:', userId);
     console.log('Локальная база данных загружена:', !!localUsersDB);
     
-    // Сначала пробуем получить из локальной базы
+    // Ищем только в локальной базе данных
     if (localUsersDB && localUsersDB[userId]) {
         const userData = localUsersDB[userId];
         console.log('Пользователь найден в локальной базе:', userData);
@@ -147,81 +146,36 @@ async function fetchUserBalance(userId) {
         };
     }
     
-    console.log('Пользователь не найден в локальной базе, пробуем API...');
-    
-    // Если не найдено локально, пробуем API
-    try {
-        const response = await fetch(`${API_BASE_URL}/balance/${userId}`);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        console.log('Данные получены из API:', data);
-        return data;
-    } catch (error) {
-        console.error('Ошибка получения баланса из API:', error);
-        throw new Error(`Пользователь с ID ${userId} не найден в базе данных`);
-    }
+    console.log('Пользователь не найден в локальной базе');
+    throw new Error(`Пользователь с ID ${userId} не найден в базе данных`);
 }
 
-async function updateUserBalance(userId, newBalance) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/balance/${userId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ balance: newBalance })
-        });
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error('Ошибка обновления баланса:', error);
-        throw error;
+// Локальные функции для работы с балансом (без API)
+function updateLocalBalance(userId, newBalance) {
+    if (localUsersDB && localUsersDB[userId]) {
+        localUsersDB[userId].balance = newBalance;
+        console.log(`Баланс обновлен локально: ${userId} = ${newBalance}`);
+        return true;
     }
+    return false;
 }
 
-async function addToUserBalance(userId, amount) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/balance/${userId}/add`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ amount: amount })
-        });
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error('Ошибка добавления к балансу:', error);
-        throw error;
+function addToLocalBalance(userId, amount) {
+    if (localUsersDB && localUsersDB[userId]) {
+        localUsersDB[userId].balance = (localUsersDB[userId].balance || 0) + amount;
+        console.log(`Добавлено к балансу: ${userId} + ${amount} = ${localUsersDB[userId].balance}`);
+        return true;
     }
+    return false;
 }
 
-async function subtractFromUserBalance(userId, amount) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/balance/${userId}/subtract`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ amount: amount })
-        });
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error('Ошибка вычитания из баланса:', error);
-        throw error;
+function subtractFromLocalBalance(userId, amount) {
+    if (localUsersDB && localUsersDB[userId]) {
+        localUsersDB[userId].balance = Math.max(0, (localUsersDB[userId].balance || 0) - amount);
+        console.log(`Вычтено из баланса: ${userId} - ${amount} = ${localUsersDB[userId].balance}`);
+        return true;
     }
+    return false;
 }
 
 // --- ФУНКЦИИ АУТЕНТИФИКАЦИИ ---
@@ -242,8 +196,7 @@ async function loginUser(userId) {
         // Обновляем UI
         updateAuthUI();
         
-        // Запускаем синхронизацию
-        startBalanceSync();
+        // Локальная версия - синхронизация не нужна
         
         showNotification(`Добро пожаловать, ${userData.nick}!`);
         return true;
@@ -320,8 +273,7 @@ function logoutUser() {
     userState.userId = null;
     userState.userNick = null;
     
-    // Останавливаем синхронизацию
-    stopBalanceSync();
+    // Локальная версия - синхронизация не нужна
     
     // Сбрасываем баланс на начальный
     state.balance = START_BALANCE;
@@ -345,60 +297,8 @@ function updateAuthUI() {
     }
 }
 
-// --- СИНХРОНИЗАЦИЯ БАЛАНСА ---
-let syncInterval = null;
-
-function startBalanceSync() {
-    if (syncInterval) return;
-    
-    syncInterval = setInterval(async () => {
-        if (userState.isLoggedIn && !userState.syncInProgress) {
-            await syncBalanceFromAPI();
-        }
-    }, SYNC_INTERVAL);
-}
-
-function stopBalanceSync() {
-    if (syncInterval) {
-        clearInterval(syncInterval);
-        syncInterval = null;
-    }
-}
-
-async function syncBalanceFromAPI() {
-    if (!userState.isLoggedIn || userState.syncInProgress) return;
-    
-    userState.syncInProgress = true;
-    
-    try {
-        const userData = await fetchUserBalance(userState.userId);
-        if (userData.balance !== state.balance) {
-            state.balance = userData.balance;
-            renderBalance();
-            console.log('Баланс синхронизирован с сервером');
-        }
-    } catch (error) {
-        console.error('Ошибка синхронизации баланса:', error);
-    } finally {
-        userState.syncInProgress = false;
-    }
-}
-
-async function syncBalanceToAPI() {
-    if (!userState.isLoggedIn || userState.syncInProgress) return;
-    
-    userState.syncInProgress = true;
-    
-    try {
-        await updateUserBalance(userState.userId, state.balance);
-        console.log('Баланс отправлен на сервер');
-    } catch (error) {
-        console.error('Ошибка отправки баланса на сервер:', error);
-        showNotification('Ошибка синхронизации с сервером');
-    } finally {
-        userState.syncInProgress = false;
-    }
-}
+// --- ЛОКАЛЬНАЯ РАБОТА С БАЛАНСОМ ---
+// Синхронизация с API отключена - работаем только локально
 
 // --- АНИМАЦИЯ ВРАЩЕНИЯ БАРАБАНОВ ---
 function startReelSpin() {
@@ -817,9 +717,9 @@ function spinBonus() {
         state.win += totalWin;
         state.lastWinLines = winLines;
         
-        // Синхронизируем с API если пользователь авторизован
+        // Обновляем локальный баланс
         if (userState.isLoggedIn) {
-            syncBalanceToAPI();
+            updateLocalBalance(userState.userId, state.balance);
         }
         
         // Показываем выигрышные линии через некоторое время
@@ -855,9 +755,9 @@ function spin() {
     state.balance -= state.bet;
     renderBalance();
     
-    // Синхронизируем с API если пользователь авторизован
+    // Обновляем локальный баланс
     if (userState.isLoggedIn) {
-        syncBalanceToAPI();
+        updateLocalBalance(userState.userId, state.balance);
     }
     
     // Генерируем новые символы
@@ -909,9 +809,9 @@ function spin() {
         state.win = totalWin;
         state.lastWinLines = winLines;
         
-        // Синхронизируем с API если пользователь авторизован
+        // Обновляем локальный баланс
         if (userState.isLoggedIn) {
-            syncBalanceToAPI();
+            updateLocalBalance(userState.userId, state.balance);
         }
         
         // Добавляем в историю
