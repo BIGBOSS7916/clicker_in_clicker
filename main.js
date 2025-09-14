@@ -178,34 +178,6 @@ function subtractFromLocalBalance(userId, amount) {
     return false;
 }
 
-// --- ФУНКЦИИ АУТЕНТИФИКАЦИИ ---
-async function loginUser(userId) {
-    try {
-        console.log('Попытка входа для пользователя:', userId);
-        const userData = await fetchUserBalance(userId);
-        console.log('Данные пользователя получены:', userData);
-        
-        userState.isLoggedIn = true;
-        userState.userId = userId;
-        userState.userNick = userData.nick;
-        
-        // Обновляем баланс из API
-        state.balance = userData.balance;
-        renderBalance();
-        
-        // Обновляем UI
-        updateAuthUI();
-        
-        // Локальная версия - синхронизация не нужна
-        
-        showNotification(`Добро пожаловать, ${userData.nick}!`);
-        return true;
-    } catch (error) {
-        console.error('Ошибка входа:', error);
-        showNotification(`Ошибка входа: ${error.message || 'Пользователь не найден'}`);
-        return false;
-    }
-}
 
 // Функция для автоматического входа через Telegram Web App
 async function autoLoginFromTelegram() {
@@ -227,14 +199,17 @@ async function autoLoginFromTelegram() {
                 console.log('User data found:', user);
                 console.log('User ID:', user.id);
                 
-                // Автоматически входим с ID из Telegram
-                const success = await loginUser(user.id.toString());
-                if (success) {
-                    console.log('Автоматический вход успешен');
-                    return true;
-                } else {
-                    console.log('Ошибка автоматического входа');
-                }
+                // Автоматически устанавливаем пользователя
+                userState.isLoggedIn = true;
+                userState.userId = user.id.toString();
+                userState.userNick = user.first_name || 'Пользователь';
+                
+                // Обновляем UI
+                userSection.style.display = 'flex';
+                userNickEl.textContent = userState.userNick;
+                
+                console.log('Автоматический вход успешен');
+                return true;
             } else {
                 console.log('Данные пользователя не найдены в Telegram Web App');
                 // Пробуем получить ID из initData
@@ -246,11 +221,18 @@ async function autoLoginFromTelegram() {
                             const userData = JSON.parse(decodeURIComponent(userParam));
                             if (userData.id) {
                                 console.log('User ID from initData:', userData.id);
-                                const success = await loginUser(userData.id.toString());
-                                if (success) {
-                                    console.log('Автоматический вход через initData успешен');
-                                    return true;
-                                }
+                                
+                                // Автоматически устанавливаем пользователя
+                                userState.isLoggedIn = true;
+                                userState.userId = userData.id.toString();
+                                userState.userNick = userData.first_name || 'Пользователь';
+                                
+                                // Обновляем UI
+                                userSection.style.display = 'flex';
+                                userNickEl.textContent = userState.userNick;
+                                
+                                console.log('Автоматический вход через initData успешен');
+                                return true;
                             }
                         }
                     } catch (e) {
@@ -268,34 +250,6 @@ async function autoLoginFromTelegram() {
     }
 }
 
-function logoutUser() {
-    userState.isLoggedIn = false;
-    userState.userId = null;
-    userState.userNick = null;
-    
-    // Локальная версия - синхронизация не нужна
-    
-    // Сбрасываем баланс на начальный
-    state.balance = START_BALANCE;
-    renderBalance();
-    
-    // Обновляем UI
-    updateAuthUI();
-    
-    showNotification('Вы вышли из системы');
-}
-
-function updateAuthUI() {
-    if (userState.isLoggedIn) {
-        loginSection.style.display = 'none';
-        userSection.style.display = 'flex';
-        userNickEl.textContent = userState.userNick;
-    } else {
-        loginSection.style.display = 'flex';
-        userSection.style.display = 'none';
-        userIdInput.value = '';
-    }
-}
 
 // --- ЛОКАЛЬНАЯ РАБОТА С БАЛАНСОМ ---
 // Синхронизация с API отключена - работаем только локально
@@ -855,45 +809,6 @@ function spin() {
 // --- КНОПКИ И СОБЫТИЯ ---
 spinBtn.onclick = () => spin();
 
-// Обработчики аутентификации
-loginBtn.onclick = async () => {
-    const userId = userIdInput.value.trim();
-    if (!userId) {
-        showNotification('Введите ваш Telegram ID');
-        return;
-    }
-    
-    if (!/^\d+$/.test(userId)) {
-        showNotification('Telegram ID должен содержать только цифры');
-        return;
-    }
-    
-    loginBtn.disabled = true;
-    loginBtn.textContent = 'Вход...';
-    
-    const success = await loginUser(userId);
-    
-    loginBtn.disabled = false;
-    loginBtn.textContent = 'Войти';
-    
-    if (success) {
-        // Сохраняем ID в localStorage для автоматического входа
-        localStorage.setItem('slot_user_id', userId);
-    }
-};
-
-logoutBtn.onclick = () => {
-    logoutUser();
-    // Удаляем ID из localStorage
-    localStorage.removeItem('slot_user_id');
-};
-
-// Обработчик Enter в поле ввода ID
-userIdInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        loginBtn.click();
-    }
-});
 autospinBtn.onclick = () => {
     if (state.inBonus || state.bonusActive) return;
     
@@ -1194,233 +1109,10 @@ function renderAll() {
     renderReels();
 }
 
-// --- РАДИО ПЛЕЕР ---
-function initRadioPlayer() {
-    const audio = document.getElementById('radio-audio');
-    const playPauseBtn = document.getElementById('play-pause-btn');
-    const muteBtn = document.getElementById('mute-btn');
-    const volumeSlider = document.getElementById('volume-slider');
-    // const progressBar = document.querySelector('.progress-bar');
-    // const progressFill = document.querySelector('.progress-fill');
-    // const currentTimeEl = document.querySelector('.current-time');
-    // const totalTimeEl = document.querySelector('.total-time');
-    const trackTitleEl = document.querySelector('.track-title');
-    const trackArtistEl = document.querySelector('.track-artist');
-
-    let isPlaying = false;
-    let isMuted = false;
-    let lastVolume = 70;
-
-    // Функция форматирования времени (не используется для радио)
-    // function formatTime(seconds) {
-    //     const mins = Math.floor(seconds / 60);
-    //     const secs = Math.floor(seconds % 60);
-    //     return `${mins}:${secs.toString().padStart(2, '0')}`;
-    // }
-
-    // Обновление прогресса (не используется для радио)
-    // function updateProgress() {
-    //     if (audio.duration) {
-    //         const progress = (audio.currentTime / audio.duration) * 100;
-    //         progressFill.style.width = `${progress}%`;
-    //         currentTimeEl.textContent = formatTime(audio.currentTime);
-    //     }
-    // }
-
-    // Обновление времени (не используется для радио)
-    // function updateTime() {
-    //     if (audio.duration && !isNaN(audio.duration)) {
-    //         totalTimeEl.textContent = formatTime(audio.duration);
-    //     } else {
-    //         totalTimeEl.textContent = '0:00';
-    //     }
-    // }
-
-    // Обработчик кнопки воспроизведения/паузы
-    playPauseBtn.addEventListener('click', () => {
-        if (isPlaying) {
-            // Останавливаем поток радио
-            audio.pause();
-            playPauseBtn.classList.remove('playing');
-            playPauseBtn.querySelector('.btn-icon').textContent = '▶';
-            isPlaying = false;
-        } else {
-            // Принудительно перезагружаем источник для получения нового потока
-            const currentSrc = audio.src;
-            console.log('Попытка воспроизведения радио с источником:', currentSrc);
-            
-            audio.src = '';
-            audio.load();
-            audio.src = currentSrc;
-            
-            // Запускаем радио заново (будет новый поток)
-            audio.play().then(() => {
-                console.log('Радио успешно запущено');
-                playPauseBtn.classList.add('playing');
-                playPauseBtn.querySelector('.btn-icon').textContent = '⏸';
-                isPlaying = true;
-                // Восстанавливаем громкость
-                audio.volume = lastVolume / 100;
-            }).catch(error => {
-                console.error('Ошибка воспроизведения радио:', error);
-                console.error('Тип ошибки:', error.name);
-                console.error('Сообщение ошибки:', error.message);
-                
-                // Показываем уведомление только если это не автозапуск
-                if (isPlaying === false) {
-                    let errorMessage = 'Ошибка воспроизведения радио. ';
-                    if (error.name === 'NotAllowedError') {
-                        errorMessage += 'Разрешите воспроизведение звука в браузере.';
-                    } else if (error.name === 'NotSupportedError') {
-                        errorMessage += 'Формат аудио не поддерживается.';
-                    } else if (error.name === 'NetworkError') {
-                        errorMessage += 'Проблема с сетью. Проверьте подключение.';
-                    } else {
-                        errorMessage += 'Попробуйте еще раз.';
-                    }
-                    showNotification(errorMessage, 5000);
-                }
-            });
-        }
-    });
-
-    // Обработчик кнопки звука
-    muteBtn.addEventListener('click', () => {
-        if (isMuted) {
-            audio.volume = lastVolume / 100;
-            muteBtn.classList.remove('muted');
-            muteBtn.querySelector('.btn-icon').textContent = '🔊';
-            volumeSlider.value = lastVolume;
-        } else {
-            lastVolume = audio.volume * 100;
-            audio.volume = 0;
-            muteBtn.classList.add('muted');
-            muteBtn.querySelector('.btn-icon').textContent = '🔈';
-            volumeSlider.value = 0;
-        }
-        isMuted = !isMuted;
-    });
-
-    // Обработчик слайдера громкости
-    volumeSlider.addEventListener('input', (e) => {
-        const volume = e.target.value / 100;
-        audio.volume = volume;
-        lastVolume = e.target.value;
-        
-        if (volume === 0) {
-            muteBtn.classList.add('muted');
-            muteBtn.querySelector('.btn-icon').textContent = '🔈';
-            isMuted = true;
-        } else {
-            muteBtn.classList.remove('muted');
-            muteBtn.querySelector('.btn-icon').textContent = '🔊';
-            isMuted = false;
-        }
-        
-        // Если радио на паузе и увеличиваем громкость, то запускаем заново
-        if (!isPlaying && volume > 0) {
-            // Принудительно перезагружаем источник для получения нового потока
-            const currentSrc = audio.src;
-            audio.src = '';
-            audio.load();
-            audio.src = currentSrc;
-            
-            audio.play().then(() => {
-                console.log('Радио запущено через слайдер громкости');
-                isPlaying = true;
-                playPauseBtn.classList.add('playing');
-                playPauseBtn.querySelector('.btn-icon').textContent = '⏸';
-            }).catch(error => {
-                console.error('Ошибка воспроизведения через слайдер громкости:', error);
-                // Не показываем уведомление при изменении громкости
-            });
-        }
-    });
-
-    // Обработчик клика по прогресс-бару (отключен для радио)
-    // progressBar.addEventListener('click', (e) => {
-    //     const rect = progressBar.getBoundingClientRect();
-    //     const clickX = e.clientX - rect.left;
-    //     const progressWidth = rect.width;
-    //     const clickPercent = clickX / progressWidth;
-    //     
-    //     if (audio.duration && !isNaN(audio.duration)) {
-    //         audio.currentTime = clickPercent * audio.duration;
-    //     }
-    // });
-
-    // События аудио
-    // audio.addEventListener('loadedmetadata', updateTime);
-    // audio.addEventListener('timeupdate', updateProgress);
-    audio.addEventListener('ended', () => {
-        isPlaying = false;
-        playPauseBtn.classList.remove('playing');
-        playPauseBtn.querySelector('.btn-icon').textContent = '▶';
-    });
-
-    audio.addEventListener('play', () => {
-        isPlaying = true;
-        playPauseBtn.classList.add('playing');
-        playPauseBtn.querySelector('.btn-icon').textContent = '⏸';
-    });
-
-    audio.addEventListener('pause', () => {
-        isPlaying = false;
-        playPauseBtn.classList.remove('playing');
-        playPauseBtn.querySelector('.btn-icon').textContent = '▶';
-    });
-
-    audio.addEventListener('error', (e) => {
-        console.error('Ошибка загрузки аудио:', e);
-        console.error('Код ошибки:', audio.error ? audio.error.code : 'неизвестно');
-        console.error('Сообщение ошибки:', audio.error ? audio.error.message : 'неизвестно');
-        
-        let errorMessage = 'Ошибка загрузки радиостанции. ';
-        if (audio.error) {
-            switch(audio.error.code) {
-                case 1:
-                    errorMessage += 'Загрузка прервана.';
-                    break;
-                case 2:
-                    errorMessage += 'Ошибка сети.';
-                    break;
-                case 3:
-                    errorMessage += 'Формат не поддерживается.';
-                    break;
-                case 4:
-                    errorMessage += 'Источник недоступен.';
-                    break;
-                default:
-                    errorMessage += 'Неизвестная ошибка.';
-            }
-        }
-        showNotification(errorMessage, 5000);
-    });
-
-    // Установка начальной громкости
-    audio.volume = 0.7;
-    volumeSlider.value = 70;
-    lastVolume = 70;
-    
-    // Не запускаем радио автоматически (браузеры блокируют автозапуск)
-    // Радио запустится при первом клике на кнопку воспроизведения
-    isPlaying = false;
-    playPauseBtn.classList.remove('playing');
-    playPauseBtn.querySelector('.btn-icon').textContent = '▶';
-
-    // Обновление информации о треке
-    function updateTrackInfo() {
-        trackTitleEl.textContent = 'BBR FM';
-        trackArtistEl.textContent = 'BBR FM лучшее танцевальное радио страны, современные хиты каждый день!';
-    }
-
-    updateTrackInfo();
-}
 
 async function init() {
     state.reels = spinReels();
     renderAll();
-    initRadioPlayer();
     
     // Загружаем локальную базу данных
     await loadLocalUsersDB();
@@ -1428,16 +1120,15 @@ async function init() {
     // Сначала пробуем автоматический вход через Telegram Web App
     const telegramLoginSuccess = await autoLoginFromTelegram();
     
-    // Если автоматический вход не удался, проверяем сохраненный ID
+    // Если автоматический вход не удался, показываем пользователя по умолчанию
     if (!telegramLoginSuccess) {
-        const savedUserId = localStorage.getItem('slot_user_id');
-        if (savedUserId) {
-            userIdInput.value = savedUserId;
-            // Автоматически входим
-            setTimeout(() => {
-                loginUser(savedUserId);
-            }, 1000);
-        }
+        userState.isLoggedIn = true;
+        userState.userId = 'guest';
+        userState.userNick = 'Гость';
+        
+        // Обновляем UI
+        userSection.style.display = 'flex';
+        userNickEl.textContent = userState.userNick;
     }
 }
 
