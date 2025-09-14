@@ -13,6 +13,9 @@ const EMOJIS = [
 // API Configuration
 const API_BASE_URL = window.API_CONFIG ? window.API_CONFIG.current : 'http://localhost:5000/api';
 const SYNC_INTERVAL = 30000; // Синхронизация каждые 30 секунд
+
+// Локальная база данных пользователей
+let localUsersDB = null;
 const WILD_INDEXES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // Индексы для WILD (можно расширить)
 const BONUS_INDEX = 0; // Индекс для BONUS (будет отдельный символ)
 const WILD_EMOJI = '🥈'; // WILD символ (серебряная медаль)
@@ -113,18 +116,51 @@ function formatNumber(num) {
     return num.toLocaleString('ru-RU').replace(/\s/g, '.').replace(/,/g, '.');
 }
 
+// --- ЗАГРУЗКА ЛОКАЛЬНОЙ БАЗЫ ДАННЫХ ---
+async function loadLocalUsersDB() {
+    try {
+        const response = await fetch('./users_db.json');
+        if (response.ok) {
+            localUsersDB = await response.json();
+            console.log('Локальная база данных загружена:', Object.keys(localUsersDB).length, 'пользователей');
+            return true;
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки локальной базы данных:', error);
+    }
+    return false;
+}
+
 // --- API ФУНКЦИИ ---
 async function fetchUserBalance(userId) {
+    console.log('Поиск пользователя:', userId);
+    console.log('Локальная база данных загружена:', !!localUsersDB);
+    
+    // Сначала пробуем получить из локальной базы
+    if (localUsersDB && localUsersDB[userId]) {
+        const userData = localUsersDB[userId];
+        console.log('Пользователь найден в локальной базе:', userData);
+        return {
+            user_id: userId,
+            balance: userData.balance || 0,
+            nick: userData.nick || 'Unknown'
+        };
+    }
+    
+    console.log('Пользователь не найден в локальной базе, пробуем API...');
+    
+    // Если не найдено локально, пробуем API
     try {
         const response = await fetch(`${API_BASE_URL}/balance/${userId}`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
+        console.log('Данные получены из API:', data);
         return data;
     } catch (error) {
-        console.error('Ошибка получения баланса:', error);
-        throw error;
+        console.error('Ошибка получения баланса из API:', error);
+        throw new Error(`Пользователь с ID ${userId} не найден в базе данных`);
     }
 }
 
@@ -191,7 +227,10 @@ async function subtractFromUserBalance(userId, amount) {
 // --- ФУНКЦИИ АУТЕНТИФИКАЦИИ ---
 async function loginUser(userId) {
     try {
+        console.log('Попытка входа для пользователя:', userId);
         const userData = await fetchUserBalance(userId);
+        console.log('Данные пользователя получены:', userData);
+        
         userState.isLoggedIn = true;
         userState.userId = userId;
         userState.userNick = userData.nick;
@@ -209,7 +248,8 @@ async function loginUser(userId) {
         showNotification(`Добро пожаловать, ${userData.nick}!`);
         return true;
     } catch (error) {
-        showNotification('Ошибка входа. Проверьте правильность ID.');
+        console.error('Ошибка входа:', error);
+        showNotification(`Ошибка входа: ${error.message || 'Пользователь не найден'}`);
         return false;
     }
 }
@@ -220,21 +260,53 @@ async function autoLoginFromTelegram() {
         // Проверяем, запущено ли приложение в Telegram Web App
         if (window.Telegram && window.Telegram.WebApp) {
             const tg = window.Telegram.WebApp;
+            console.log('Telegram Web App detected');
+            console.log('Init data:', tg.initData);
+            console.log('Init data unsafe:', tg.initDataUnsafe);
+            
+            // Инициализируем Web App
+            tg.ready();
+            tg.expand();
             
             // Получаем данные пользователя из Telegram
             const user = tg.initDataUnsafe?.user;
             if (user && user.id) {
-                console.log('Telegram Web App detected, user ID:', user.id);
+                console.log('User data found:', user);
+                console.log('User ID:', user.id);
                 
                 // Автоматически входим с ID из Telegram
                 const success = await loginUser(user.id.toString());
                 if (success) {
-                    // Скрываем кнопку закрытия Telegram Web App
-                    tg.ready();
-                    tg.expand();
+                    console.log('Автоматический вход успешен');
                     return true;
+                } else {
+                    console.log('Ошибка автоматического входа');
+                }
+            } else {
+                console.log('Данные пользователя не найдены в Telegram Web App');
+                // Пробуем получить ID из initData
+                if (tg.initData) {
+                    try {
+                        const urlParams = new URLSearchParams(tg.initData);
+                        const userParam = urlParams.get('user');
+                        if (userParam) {
+                            const userData = JSON.parse(decodeURIComponent(userParam));
+                            if (userData.id) {
+                                console.log('User ID from initData:', userData.id);
+                                const success = await loginUser(userData.id.toString());
+                                if (success) {
+                                    console.log('Автоматический вход через initData успешен');
+                                    return true;
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Ошибка парсинга initData:', e);
+                    }
                 }
             }
+        } else {
+            console.log('Telegram Web App не обнаружен');
         }
         return false;
     } catch (error) {
@@ -1449,6 +1521,9 @@ async function init() {
     state.reels = spinReels();
     renderAll();
     initRadioPlayer();
+    
+    // Загружаем локальную базу данных
+    await loadLocalUsersDB();
     
     // Сначала пробуем автоматический вход через Telegram Web App
     const telegramLoginSuccess = await autoLoginFromTelegram();
