@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Telegram Web App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #23272e;
+            color: white;
+        }
+        .debug-info {
+            background: #1a1d22;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+        .error {
+            color: #ff5e62;
+        }
+        .success {
+            color: #00e676;
+        }
+        button {
+            background: #ffb300;
+            color: #23272e;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #ff5e62;
+        }
+    </style>
+</head>
+<body>
+    <h1>🐛 Debug Telegram Web App</h1>
+    
+    <div class="debug-info">
+        <h3>Информация о Telegram Web App:</h3>
+        <div id="telegram-info">Загрузка...</div>
+    </div>
+    
+    <div class="debug-info">
+        <h3>Данные пользователя:</h3>
+        <div id="user-info">Загрузка...</div>
+    </div>
+    
+    <div class="debug-info">
+        <h3>Локальная база данных:</h3>
+        <div id="db-info">Загрузка...</div>
+        <div style="margin-top: 10px; color: #ffb300;">
+            <strong>Режим:</strong> Локальная версия (API отключен)
+        </div>
+    </div>
+    
+    <div class="debug-info">
+        <h3>Тест входа:</h3>
+        <input type="text" id="test-user-id" placeholder="Введите ID для теста" value="5089510170">
+        <button onclick="testLogin()">Тест входа</button>
+        <div id="login-result"></div>
+    </div>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+        let localUsersDB = null;
+        
+        async function loadLocalUsersDB() {
+            try {
+                const response = await fetch('./users_db.json');
+                if (response.ok) {
+                    localUsersDB = await response.json();
+                    document.getElementById('db-info').innerHTML = 
+                        `<span class="success">✅ База данных загружена: ${Object.keys(localUsersDB).length} пользователей</span>`;
+                    return true;
+                }
+            } catch (error) {
+                document.getElementById('db-info').innerHTML = 
+                    `<span class="error">❌ Ошибка загрузки базы данных: ${error.message}</span>`;
+            }
+            return false;
+        }
+        
+        function updateTelegramInfo() {
+            const info = document.getElementById('telegram-info');
+            
+            if (window.Telegram && window.Telegram.WebApp) {
+                const tg = window.Telegram.WebApp;
+                info.innerHTML = `
+                    <div class="success">✅ Telegram Web App обнаружен</div>
+                    <div>Init Data: ${tg.initData || 'Нет данных'}</div>
+                    <div>Init Data Unsafe: ${JSON.stringify(tg.initDataUnsafe, null, 2)}</div>
+                    <div>Platform: ${tg.platform}</div>
+                    <div>Version: ${tg.version}</div>
+                `;
+            } else {
+                info.innerHTML = '<span class="error">❌ Telegram Web App не обнаружен</span>';
+            }
+        }
+        
+        function updateUserInfo() {
+            const info = document.getElementById('user-info');
+            
+            if (window.Telegram && window.Telegram.WebApp) {
+                const tg = window.Telegram.WebApp;
+                const user = tg.initDataUnsafe?.user;
+                
+                if (user) {
+                    info.innerHTML = `
+                        <div class="success">✅ Данные пользователя найдены</div>
+                        <div>ID: ${user.id}</div>
+                        <div>Имя: ${user.first_name} ${user.last_name || ''}</div>
+                        <div>Username: @${user.username || 'Нет'}</div>
+                        <div>Язык: ${user.language_code}</div>
+                    `;
+                } else {
+                    info.innerHTML = '<span class="error">❌ Данные пользователя не найдены</span>';
+                }
+            } else {
+                info.innerHTML = '<span class="error">❌ Telegram Web App не обнаружен</span>';
+            }
+        }
+        
+        async function testLogin() {
+            const userId = document.getElementById('test-user-id').value;
+            const result = document.getElementById('login-result');
+            
+            if (!userId) {
+                result.innerHTML = '<span class="error">Введите ID пользователя</span>';
+                return;
+            }
+            
+            result.innerHTML = 'Тестирование...';
+            
+            try {
+                // Проверяем в локальной базе
+                if (localUsersDB && localUsersDB[userId]) {
+                    const userData = localUsersDB[userId];
+                    result.innerHTML = `
+                        <div class="success">✅ Пользователь найден в локальной базе</div>
+                        <div>Ник: ${userData.nick}</div>
+                        <div>Баланс: ${userData.balance}</div>
+                    `;
+                } else {
+                    result.innerHTML = '<span class="error">❌ Пользователь не найден в локальной базе</span>';
+                }
+            } catch (error) {
+                result.innerHTML = `<span class="error">❌ Ошибка: ${error.message}</span>`;
+            }
+        }
+        
+        // Инициализация
+        async function init() {
+            updateTelegramInfo();
+            updateUserInfo();
+            await loadLocalUsersDB();
+        }
+        
+        init();
+    </script>
+</body>
+</html>
