@@ -44,7 +44,7 @@ const PAYTABLE = [
     [1.25, 0.25, 0.1], // 🍓 (заменено на 🍔)
     [1.25, 0.25, 0.1], // 🍭 (заменено на 🤡)
 ];
-const START_BALANCE = 359_999_978_000_000;
+// Убираем START_BALANCE - баланс всегда загружается из базы данных
 const MIN_BET = 1_000_000;
 const MAX_BET = 100_000_000;
 const BET_STEP = 1_000_000;
@@ -56,7 +56,7 @@ const FREE_SPINS_MAX = 15;
 
 // --- СОСТОЯНИЕ ИГРЫ ---
 let state = {
-    balance: START_BALANCE,
+    balance: 0, // Баланс будет загружен из базы данных
     bet: MIN_BET,
     reels: [], // 5x3
     history: [],
@@ -147,7 +147,12 @@ async function fetchUserBalance(userId) {
     }
     
     console.log('Пользователь не найден в локальной базе');
-    throw new Error(`Пользователь с ID ${userId} не найден в базе данных`);
+    // Для новых пользователей возвращаем нулевой баланс
+    return {
+        user_id: userId,
+        balance: 0,
+        nick: 'Новый игрок'
+    };
 }
 
 // Локальные функции для работы с балансом (без API)
@@ -221,15 +226,20 @@ async function autoLoginFromTelegram() {
                 
                 // Загружаем реальный баланс пользователя
                 try {
+                    console.log('🔍 Загружаем баланс для пользователя:', userState.userId);
                     const userData = await fetchUserBalance(userState.userId);
                     state.balance = userData.balance;
                     renderBalance();
-                    console.log('Баланс загружен:', userData.balance);
+                    console.log('✅ Баланс загружен из базы данных:', userData.balance);
+                    console.log('✅ Баланс отформатирован:', formatNumber(userData.balance));
+                    console.log('👤 Пользователь:', userData.nick);
                 } catch (error) {
-                    console.error('Ошибка загрузки баланса:', error);
-                    // Используем начальный баланс если не удалось загрузить
-                    state.balance = START_BALANCE;
+                    console.error('❌ Ошибка загрузки баланса:', error);
+                    // Если произошла ошибка, используем данные из fetchUserBalance
+                    const userData = await fetchUserBalance(userState.userId);
+                    state.balance = userData.balance;
                     renderBalance();
+                    console.log('⚠️ Используем данные из fetchUserBalance, баланс:', userData.balance);
                 }
                 
                 // Обновляем UI
@@ -257,15 +267,20 @@ async function autoLoginFromTelegram() {
                                 
                                 // Загружаем реальный баланс пользователя
                                 try {
+                                    console.log('🔍 Загружаем баланс через initData для пользователя:', userState.userId);
                                     const userBalanceData = await fetchUserBalance(userState.userId);
                                     state.balance = userBalanceData.balance;
                                     renderBalance();
-                                    console.log('Баланс загружен через initData:', userBalanceData.balance);
+                                    console.log('✅ Баланс загружен через initData:', userBalanceData.balance);
+                                    console.log('✅ Баланс отформатирован:', formatNumber(userBalanceData.balance));
+                                    console.log('👤 Пользователь:', userBalanceData.nick);
                                 } catch (error) {
-                                    console.error('Ошибка загрузки баланса через initData:', error);
-                                    // Используем начальный баланс если не удалось загрузить
-                                    state.balance = START_BALANCE;
+                                    console.error('❌ Ошибка загрузки баланса через initData:', error);
+                                    // Если произошла ошибка, используем данные из fetchUserBalance
+                                    const userData = await fetchUserBalance(userState.userId);
+                                    state.balance = userData.balance;
                                     renderBalance();
+                                    console.log('⚠️ Используем данные из fetchUserBalance через initData, баланс:', userData.balance);
                                 }
                                 
                                 // Обновляем UI
@@ -509,7 +524,13 @@ function closeSidebar() {
 
 // --- ОТРИСОВКА ---
 function renderBalance() {
-    balanceEl.textContent = '$' + formatNumber(state.balance);
+    const formattedBalance = '$' + formatNumber(state.balance);
+    balanceEl.textContent = formattedBalance;
+    console.log('💰 Отображение баланса:', {
+        raw: state.balance,
+        formatted: formattedBalance,
+        element: balanceEl
+    });
 }
 function renderBet() {
     betAmountEl.textContent = '$' + formatNumber(state.bet);
@@ -1166,6 +1187,11 @@ async function init() {
         userState.isLoggedIn = true;
         userState.userId = 'guest';
         userState.userNick = 'Гость';
+        
+        // Для гостя устанавливаем нулевой баланс
+        state.balance = 0;
+        renderBalance();
+        console.log('👤 Гость, баланс: 0');
         
         // Обновляем UI
         userSection.style.display = 'flex';
