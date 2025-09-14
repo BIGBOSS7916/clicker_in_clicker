@@ -2633,482 +2633,7 @@ body {
     }
 } 
 
-/* Radio Player Styles */
-.radio-section {
-    margin-bottom: 32px;
-    width: 100%;
-    max-width: 600px;
-    margin-left: auto;
-    margin-right: auto;
-}
 
-.radio-container {
-    background: linear-gradient(135deg, var(--reel-bg) 0%, #1a1d22 100%);
-    border-radius: 20px;
-    padding: 24px;
-    box-shadow: var(--shadow);
-    border: none;
-    position: relative;
-    overflow: hidden;
-}
-
-.radio-container::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    background: linear-gradient(90deg, var(--accent) 0%, var(--accent2) 50%, var(--accent3) 100%);
-    border-radius: 22px;
-    z-index: -1;
-    animation: radio-glow 3s ease-in-out infinite;
-}
-
-@keyframes radio-glow {
-    0%, 100% { opacity: 0.7; }
-    50% { opacity: 1; }
-}
-
-.radio-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid #444857;
-}
-
-.radio-icon {
-    font-size: 2rem;
-    filter: drop-shadow(0 2px 8px rgba(255, 179, 0, 0.4));
-    animation: music-pulse 2s ease-in-out infinite;
-}
-
-@keyframes music-pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-}
-
-.radio-title {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: var(--accent);
-    text-shadow: 0 2px 8px rgba(255, 179, 0, 0.4);
-    margin: 0;
-    flex: 1;
-    text-align: center;
-}
-
-.radio-status {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(0, 230, 118, 0.1);
-    padding: 8px 16px;
-    border-radius: 20px;
-    border: 1px solid var(--win);
-}
-
-.status-dot {
-    width: 8px;
-    height: 8px;
-    background: var(--win);
-    border-radius: 50%;
-    animation: status-pulse 1.5s ease-in-out infinite;
-}
-
-@keyframes status-pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.7; transform: scale(1.2); }
-}
-
-.status-text {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--win);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.radio-player-wrapper {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 20px;
-    padding: 16px;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 12px;
-    border: 1px solid #444857;
-    min-height: 150px;
-    transition: all 0.3s ease;
-}
-
-.radio-player-wrapper:hover {
-    border-color: #666;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    transform: translateY(-1px);
-}
-
-/* Custom Radio Player Styles */
-.custom-radio-player {
-    background: linear-gradient(135deg, #2e323a 0%, #1a1d22 100%);
-    border: 2px solid #444857;
-    border-radius: 16px;
-    padding: 20px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-    transition: all 0.3s ease;
-}
-
-.radio-player-wrapper:hover .custom-radio-player {
-    border-color: #666;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
-    transform: translateY(-1px);
-}
-
-.player-controls {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    margin-bottom: 20px;
-}
-
-.player-btn {
-    background: linear-gradient(135deg, var(--accent) 0%, #ff8f00 100%);
-    border: none;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 16px rgba(255, 179, 0, 0.3);
-}
-
-.player-btn:hover {
-    transform: scale(1.1);
-    box-shadow: 0 6px 24px rgba(255, 179, 0, 0.5);
-}
-
-.player-btn:active {
-    transform: scale(0.95);
-}
-
-.btn-icon {
-    font-size: 18px;
-    color: var(--btn-text);
-    font-weight: bold;
-}
-
-.play-btn.playing .btn-icon {
-    content: "⏸";
-}
-
-.volume-control {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex: 1;
-}
-
-.volume-btn {
-    width: 40px;
-    height: 40px;
-    background: linear-gradient(135deg, var(--accent3) 0%, #0099cc 100%);
-}
-
-.volume-btn.muted .btn-icon {
-    content: "🔈";
-}
-
-.volume-slider-container {
-    flex: 1;
-    max-width: 120px;
-}
-
-.volume-slider {
-    width: 100%;
-    height: 6px;
-    border-radius: 3px;
-    background: #444857;
-    outline: none;
-    -webkit-appearance: none;
-    cursor: pointer;
-}
-
-.volume-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: var(--accent3);
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 195, 255, 0.4);
-    transition: all 0.3s ease;
-}
-
-.volume-slider::-webkit-slider-thumb:hover {
-    transform: scale(1.2);
-    box-shadow: 0 4px 12px rgba(0, 195, 255, 0.6);
-}
-
-.volume-slider::-moz-range-thumb {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: var(--accent3);
-    cursor: pointer;
-    border: none;
-    box-shadow: 0 2px 8px rgba(0, 195, 255, 0.4);
-}
-
-.player-info {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.track-info {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.track-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--accent);
-    text-shadow: 0 2px 8px rgba(255, 179, 0, 0.3);
-}
-
-.track-artist {
-    font-size: 14px;
-    color: #ccc;
-    opacity: 0.8;
-}
-
-.progress-container {
-    display: none;
-}
-
-/* Progress bar styles removed for radio streaming */
-
-.radio-info {
-    text-align: center;
-}
-
-.radio-description {
-    color: #ccc;
-    font-size: 1rem;
-    line-height: 1.5;
-    margin: 0;
-    font-style: italic;
-}
-
-/* Responsive styles for radio player */
-@media (max-width: 768px) {
-    .radio-section {
-        margin-bottom: 24px;
-        padding: 0 16px;
-    }
-    
-    .radio-container {
-        padding: 20px;
-        border-radius: 16px;
-    }
-    
-    .radio-header {
-        flex-direction: column;
-        gap: 12px;
-        text-align: center;
-    }
-    
-    .radio-icon {
-        font-size: 1.5rem;
-    }
-    
-    .radio-title {
-        font-size: 1.4rem;
-    }
-    
-    .radio-status {
-        padding: 6px 12px;
-    }
-    
-    .status-text {
-        font-size: 0.8rem;
-    }
-    
-    .radio-player-wrapper {
-        padding: 12px;
-    }
-    
-    .custom-radio-player {
-        padding: 15px;
-    }
-    
-    .player-controls {
-        gap: 15px;
-        margin-bottom: 15px;
-    }
-    
-    .player-btn {
-        width: 45px;
-        height: 45px;
-    }
-    
-    .volume-btn {
-        width: 35px;
-        height: 35px;
-    }
-    
-    .btn-icon {
-        font-size: 16px;
-    }
-    
-    .track-title {
-        font-size: 16px;
-    }
-    
-    .track-artist {
-        font-size: 12px;
-    }
-    
-    .volume-slider-container {
-        max-width: 80px;
-    }
-    
-    .radio-description {
-        font-size: 0.9rem;
-    }
-}
-
-@media (min-width: 1920px) {
-    .radio-section {
-        margin-bottom: 40px;
-        max-width: 700px;
-    }
-    
-    .radio-container {
-        padding: 32px;
-        border-radius: 24px;
-    }
-    
-    .radio-header {
-        margin-bottom: 24px;
-        padding-bottom: 20px;
-    }
-    
-    .radio-icon {
-        font-size: 2.5rem;
-    }
-    
-    .radio-title {
-        font-size: 2.2rem;
-    }
-    
-    .radio-status {
-        padding: 10px 20px;
-    }
-    
-    .status-dot {
-        width: 10px;
-        height: 10px;
-    }
-    
-    .status-text {
-        font-size: 1rem;
-    }
-    
-    .radio-player-wrapper {
-        padding: 20px;
-        margin-bottom: 24px;
-    }
-    
-    .custom-radio-player {
-        padding: 25px;
-    }
-    
-    .player-btn {
-        width: 60px;
-        height: 60px;
-    }
-    
-    .volume-btn {
-        width: 50px;
-        height: 50px;
-    }
-    
-    .btn-icon {
-        font-size: 22px;
-    }
-    
-    .track-title {
-        font-size: 20px;
-    }
-    
-    .track-artist {
-        font-size: 16px;
-    }
-    
-    .volume-slider-container {
-        max-width: 150px;
-    }
-    
-    .radio-description {
-        font-size: 1.1rem;
-    }
-}
-
-@media (min-width: 2560px) {
-    .radio-section {
-        margin-bottom: 48px;
-        max-width: 800px;
-    }
-    
-    .radio-container {
-        padding: 40px;
-        border-radius: 32px;
-    }
-    
-    .radio-header {
-        margin-bottom: 32px;
-        padding-bottom: 24px;
-    }
-    
-    .radio-icon {
-        font-size: 3rem;
-    }
-    
-    .radio-title {
-        font-size: 2.8rem;
-    }
-    
-    .radio-status {
-        padding: 12px 24px;
-    }
-    
-    .status-dot {
-        width: 12px;
-        height: 12px;
-    }
-    
-    .status-text {
-        font-size: 1.1rem;
-    }
-    
-    .radio-player-wrapper {
-        padding: 24px;
-        margin-bottom: 32px;
-    }
-    
-    .radio-description {
-        font-size: 1.2rem;
-    }
-}
 
 /* User authentication styles */
 .user-info {
@@ -3117,48 +2642,6 @@ body {
     gap: 12px;
 }
 
-.login-section {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.user-id-input {
-    padding: 8px 12px;
-    border: 2px solid var(--reel-border);
-    border-radius: 8px;
-    background: var(--reel-bg);
-    color: #fff;
-    font-size: 14px;
-    width: 200px;
-    transition: border-color 0.3s ease;
-}
-
-.user-id-input:focus {
-    outline: none;
-    border-color: var(--accent);
-}
-
-.user-id-input::placeholder {
-    color: #888;
-}
-
-.login-btn, .logout-btn {
-    padding: 8px 16px;
-    background: var(--btn-bg);
-    color: var(--btn-text);
-    border: none;
-    border-radius: 8px;
-    font-weight: 700;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.login-btn:hover, .logout-btn:hover {
-    background: var(--btn-hover);
-    transform: translateY(-1px);
-}
 
 .user-section {
     display: flex;
@@ -3172,33 +2655,693 @@ body {
     font-size: 16px;
 }
 
-.logout-btn {
-    background: var(--accent2);
-    font-size: 12px;
-    padding: 6px 12px;
-}
 
-.logout-btn:hover {
-    background: #ff1744;
-}
-
-/* Responsive adjustments for user info */
+/* Mobile-first responsive design */
 @media (max-width: 768px) {
+    .app-container {
+        padding: 16px 8px 32px 8px;
+        max-width: 100%;
+    }
+    
     .header {
         flex-direction: column;
         text-align: center;
+        padding: 16px 20px;
+        margin-bottom: 20px;
+        gap: 12px;
     }
     
-    .user-id-input {
-        width: 150px;
+    .logo-title {
+        gap: 12px;
+    }
+    
+    .logo {
+        font-size: 2rem;
+    }
+    
+    .header h1 {
+        font-size: 1.8rem;
+        letter-spacing: 1px;
     }
     
     .user-info {
         order: 2;
     }
     
+    .user-nick {
+        font-size: 14px;
+    }
+    
     .balance-container {
         order: 3;
+        font-size: 1.2rem;
+        padding: 8px 16px;
+    }
+    
+    .balance {
+        font-size: 1.5rem;
+    }
+    
+    /* Slot machine mobile optimization */
+    .slot-machine {
+        padding: 20px 16px 16px 16px;
+        margin-bottom: 20px;
+        border-radius: 16px;
+    }
+    
+    .reels {
+        gap: 8px;
+        max-width: 280px;
+        grid-template-columns: repeat(5, 50px);
+        grid-template-rows: repeat(3, 50px);
+        margin-bottom: 16px;
+    }
+    
+    .reel-cell {
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
+        border-radius: 8px;
+    }
+    
+    /* Controls mobile optimization */
+    .controls {
+        gap: 16px;
+        max-width: 320px;
+    }
+    
+    .bet-controls {
+        gap: 12px;
+    }
+    
+    .bet-btn {
+        font-size: 1.2rem;
+        padding: 8px 12px;
+        min-width: 40px;
+    }
+    
+    .bet-amount {
+        font-size: 1rem;
+        padding: 8px 12px;
+        min-width: 100px;
+    }
+    
+    .main-buttons {
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .main-btn {
+        font-size: 0.9rem;
+        padding: 12px 16px;
+        border-radius: 8px;
+        min-width: 80px;
+        flex: 1;
+        max-width: 120px;
+    }
+    
+    .info-controls {
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .info-btn {
+        font-size: 0.8rem;
+        padding: 8px 12px;
+        border-radius: 6px;
+        min-width: 70px;
+    }
+    
+    /* Paylines button */
+    .paylines-btn {
+        font-size: 0.8rem;
+        padding: 8px 12px;
+        border-radius: 6px;
+    }
+    
+    /* Win display */
+    .win-display {
+        margin-top: 16px;
+    }
+    
+    .win-message {
+        font-size: 1.2rem;
+        padding: 8px 16px;
+    }
+    
+    /* Sidebar mobile optimization */
+    .sidebar {
+        width: 100%;
+        height: 100vh;
+        top: 0;
+        left: 0;
+        border-radius: 0;
+        padding: 20px 16px;
+    }
+    
+    .sidebar-header {
+        padding: 16px 0;
+        margin-bottom: 16px;
+    }
+    
+    .sidebar-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .close-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 1.2rem;
+    }
+    
+    /* Modal mobile optimization */
+    .modal-content {
+        margin: 10px;
+        padding: 20px 16px;
+        max-width: calc(100vw - 20px);
+        max-height: calc(100vh - 20px);
+        border-radius: 12px;
+    }
+    
+    .modal-header h2 {
+        font-size: 1.5rem;
+        margin-bottom: 12px;
+    }
+    
+    .close-modal {
+        width: 28px;
+        height: 28px;
+        font-size: 1rem;
+    }
+}
+
+/* Small mobile devices (phones in portrait) */
+@media (max-width: 480px) {
+    .app-container {
+        padding: 12px 6px 24px 6px;
+    }
+    
+    .header {
+        padding: 12px 16px;
+        margin-bottom: 16px;
+        gap: 8px;
+    }
+    
+    .logo {
+        font-size: 1.8rem;
+    }
+    
+    .header h1 {
+        font-size: 1.5rem;
+        letter-spacing: 0.5px;
+    }
+    
+    .balance-container {
+        font-size: 1rem;
+        padding: 6px 12px;
+    }
+    
+    .balance {
+        font-size: 1.3rem;
+    }
+    
+    .user-nick {
+        font-size: 12px;
+    }
+    
+    /* Slot machine for small screens */
+    .slot-machine {
+        padding: 16px 12px 12px 12px;
+        margin-bottom: 16px;
+    }
+    
+    .reels {
+        gap: 6px;
+        max-width: 240px;
+        grid-template-columns: repeat(5, 42px);
+        grid-template-rows: repeat(3, 42px);
+        margin-bottom: 12px;
+    }
+    
+    .reel-cell {
+        width: 42px;
+        height: 42px;
+        font-size: 1rem;
+        border-radius: 6px;
+    }
+    
+    /* Controls for small screens */
+    .controls {
+        gap: 12px;
+        max-width: 280px;
+    }
+    
+    .bet-controls {
+        gap: 8px;
+    }
+    
+    .bet-btn {
+        font-size: 1rem;
+        padding: 6px 10px;
+        min-width: 35px;
+    }
+    
+    .bet-amount {
+        font-size: 0.9rem;
+        padding: 6px 10px;
+        min-width: 80px;
+    }
+    
+    .main-buttons {
+        gap: 8px;
+    }
+    
+    .main-btn {
+        font-size: 0.8rem;
+        padding: 10px 12px;
+        min-width: 70px;
+        max-width: 100px;
+    }
+    
+    .info-btn {
+        font-size: 0.7rem;
+        padding: 6px 10px;
+        min-width: 60px;
+    }
+    
+    .paylines-btn {
+        font-size: 0.7rem;
+        padding: 6px 10px;
+    }
+    
+    .win-message {
+        font-size: 1rem;
+        padding: 6px 12px;
+    }
+    
+    /* Sidebar for small screens */
+    .sidebar {
+        padding: 16px 12px;
+    }
+    
+    .sidebar-header h2 {
+        font-size: 1.3rem;
+    }
+    
+    .close-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 1rem;
+    }
+    
+    /* Modal for small screens */
+    .modal-content {
+        margin: 8px;
+        padding: 16px 12px;
+        max-width: calc(100vw - 16px);
+        max-height: calc(100vh - 16px);
+    }
+    
+    .modal-header h2 {
+        font-size: 1.3rem;
+        margin-bottom: 10px;
+    }
+    
+    .close-modal {
+        width: 24px;
+        height: 24px;
+        font-size: 0.9rem;
+    }
+}
+
+/* Landscape mobile devices */
+@media (max-width: 768px) and (orientation: landscape) {
+    .app-container {
+        padding: 8px 12px 16px 12px;
+    }
+    
+    .header {
+        flex-direction: row;
+        padding: 12px 20px;
+        margin-bottom: 16px;
+        gap: 16px;
+    }
+    
+    .logo {
+        font-size: 1.5rem;
+    }
+    
+    .header h1 {
+        font-size: 1.4rem;
+    }
+    
+    .balance-container {
+        font-size: 1rem;
+        padding: 6px 12px;
+    }
+    
+    .balance {
+        font-size: 1.2rem;
+    }
+    
+    .slot-machine {
+        padding: 16px 20px 12px 20px;
+        margin-bottom: 16px;
+    }
+    
+    .reels {
+        gap: 6px;
+        max-width: 300px;
+        grid-template-columns: repeat(5, 50px);
+        grid-template-rows: repeat(3, 50px);
+        margin-bottom: 12px;
+    }
+    
+    .controls {
+        gap: 12px;
+        max-width: 400px;
+    }
+    
+    .main-buttons {
+        gap: 8px;
+    }
+    
+    .main-btn {
+        font-size: 0.8rem;
+        padding: 8px 12px;
+        min-width: 70px;
+    }
+}
+
+/* Tablet devices */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .app-container {
+        padding: 24px 20px 48px 20px;
+    }
+    
+    .header {
+        padding: 20px 28px;
+        margin-bottom: 28px;
+    }
+    
+    .logo {
+        font-size: 2.5rem;
+    }
+    
+    .header h1 {
+        font-size: 2.2rem;
+    }
+    
+    .balance-container {
+        font-size: 1.4rem;
+        padding: 10px 20px;
+    }
+    
+    .balance {
+        font-size: 1.8rem;
+    }
+    
+    .slot-machine {
+        padding: 28px 24px 20px 24px;
+        margin-bottom: 24px;
+    }
+    
+    .reels {
+        gap: 10px;
+        max-width: 400px;
+        grid-template-columns: repeat(5, 60px);
+        grid-template-rows: repeat(3, 60px);
+        margin-bottom: 20px;
+    }
+    
+    .reel-cell {
+        width: 60px;
+        height: 60px;
+        font-size: 1.4rem;
+    }
+    
+    .controls {
+        gap: 20px;
+        max-width: 500px;
+    }
+    
+    .main-btn {
+        font-size: 1rem;
+        padding: 14px 20px;
+    }
+    
+    .bet-btn {
+        font-size: 1.3rem;
+        padding: 8px 16px;
+    }
+    
+    .bet-amount {
+        font-size: 1.2rem;
+        padding: 8px 16px;
+    }
+    
+    .sidebar {
+        width: 80%;
+        max-width: 600px;
+    }
+    
+    .modal-content {
+        max-width: 90%;
+        padding: 32px 24px;
+    }
+}
+
+/* Desktop optimization */
+@media (min-width: 1025px) {
+    .app-container {
+        padding: 32px 24px 64px 24px;
+    }
+    
+    .header {
+        padding: 24px 32px;
+        margin-bottom: 32px;
+    }
+    
+    .slot-machine {
+        padding: 32px 28px 24px 28px;
+        margin-bottom: 28px;
+    }
+    
+    .reels {
+        gap: 12px;
+        max-width: 500px;
+        grid-template-columns: repeat(5, 70px);
+        grid-template-rows: repeat(3, 70px);
+        margin-bottom: 24px;
+    }
+    
+    .reel-cell {
+        width: 70px;
+        height: 70px;
+        font-size: 1.6rem;
+    }
+    
+    .controls {
+        gap: 24px;
+        max-width: 600px;
+    }
+    
+    .main-btn {
+        font-size: 1.1rem;
+        padding: 16px 24px;
+    }
+    
+    .bet-btn {
+        font-size: 1.4rem;
+        padding: 10px 18px;
+    }
+    
+    .bet-amount {
+        font-size: 1.3rem;
+        padding: 10px 18px;
+    }
+    
+    .sidebar {
+        width: 70%;
+        max-width: 800px;
+    }
+    
+    .modal-content {
+        max-width: 80%;
+        padding: 40px 32px;
+    }
+}
+
+/* Touch-friendly improvements for mobile */
+@media (max-width: 768px) {
+    /* Increase touch targets */
+    .bet-btn, .main-btn, .info-btn, .paylines-btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    .close-btn, .close-modal {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    /* Improve scrolling */
+    .sidebar-content {
+        -webkit-overflow-scrolling: touch;
+        overflow-y: auto;
+    }
+    
+    .modal-content {
+        -webkit-overflow-scrolling: touch;
+        overflow-y: auto;
+    }
+    
+    /* Prevent zoom on input focus */
+    input, select, textarea {
+        font-size: 16px;
+    }
+    
+    /* Better spacing for touch */
+    .main-buttons {
+        gap: 16px;
+    }
+    
+    .info-controls {
+        gap: 16px;
+    }
+    
+    .bet-controls {
+        gap: 16px;
+    }
+}
+
+/* Telegram Web App specific optimizations */
+@media (max-width: 768px) {
+    /* Optimize for Telegram Web App viewport */
+    body {
+        /* Prevent overscroll bounce on iOS */
+        overscroll-behavior: none;
+        /* Optimize for mobile browsers */
+        -webkit-text-size-adjust: 100%;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    /* Ensure full viewport usage */
+    .app-container {
+        min-height: 100vh;
+        min-height: 100dvh; /* Dynamic viewport height for mobile browsers */
+    }
+    
+    /* Optimize header for Telegram Web App */
+    .header {
+        /* Add safe area padding for devices with notches */
+        padding-top: max(16px, env(safe-area-inset-top));
+        padding-left: max(20px, env(safe-area-inset-left));
+        padding-right: max(20px, env(safe-area-inset-right));
+    }
+    
+    /* Improve button interactions for touch */
+    .bet-btn, .main-btn, .info-btn, .paylines-btn {
+        /* Better touch feedback */
+        -webkit-tap-highlight-color: rgba(255, 179, 0, 0.3);
+        /* Prevent text selection on buttons */
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        /* Smooth transitions */
+        transition: all 0.2s ease;
+    }
+    
+    /* Active states for better touch feedback */
+    .bet-btn:active, .main-btn:active, .info-btn:active, .paylines-btn:active {
+        transform: scale(0.95);
+        opacity: 0.8;
+    }
+    
+    /* Optimize reels for touch interaction */
+    .reel-cell {
+        /* Prevent text selection */
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        /* Better touch target */
+        cursor: pointer;
+    }
+    
+    /* Improve modal and sidebar for mobile */
+    .modal, .sidebar {
+        /* Full screen on mobile */
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: 100%;
+        /* Add safe area padding */
+        padding-top: max(20px, env(safe-area-inset-top));
+        padding-left: max(16px, env(safe-area-inset-left));
+        padding-right: max(16px, env(safe-area-inset-right));
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
+    }
+    
+    /* Optimize scrolling areas */
+    .sidebar-content, .modal-content {
+        /* Smooth scrolling on iOS */
+        -webkit-overflow-scrolling: touch;
+        /* Prevent horizontal scroll */
+        overflow-x: hidden;
+        /* Better scrollbar on mobile */
+        scrollbar-width: thin;
+        scrollbar-color: var(--accent) transparent;
+    }
+    
+    .sidebar-content::-webkit-scrollbar, .modal-content::-webkit-scrollbar {
+        width: 4px;
+    }
+    
+    .sidebar-content::-webkit-scrollbar-thumb, .modal-content::-webkit-scrollbar-thumb {
+        background: var(--accent);
+        border-radius: 2px;
+    }
+    
+    /* Optimize text for mobile reading */
+    .win-message, .balance, .user-nick {
+        /* Prevent text selection */
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+    
+    /* Improve focus states for accessibility */
+    .bet-btn:focus, .main-btn:focus, .info-btn:focus, .paylines-btn:focus {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+    }
+}
+
+/* High DPI display optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .reel-cell, .bet-btn, .main-btn, .info-btn, .paylines-btn {
+        /* Crisp borders on high DPI displays */
+        border-width: 0.5px;
+    }
+}
+
+/* Dark mode optimizations for Telegram */
+@media (prefers-color-scheme: dark) {
+    /* Ensure proper contrast in dark mode */
+    .header, .slot-machine, .controls {
+        background: var(--header-bg);
+    }
+    
+    .reel-cell {
+        background: var(--reel-bg);
+        border-color: var(--reel-border);
     }
 }
 
