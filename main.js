@@ -9,6 +9,10 @@ document.addEventListener('DOMContentLoaded', function() {
 const EMOJIS = [
     '🐶', '🤡', '😈', '👹', '👽', '🤖', '💀', '👻', '🤬', '😎', '🍔'
 ];
+
+// API Configuration
+const API_BASE_URL = window.API_CONFIG ? window.API_CONFIG.current : 'http://localhost:5000/api';
+const SYNC_INTERVAL = 30000; // Синхронизация каждые 30 секунд
 const WILD_INDEXES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // Индексы для WILD (можно расширить)
 const BONUS_INDEX = 0; // Индекс для BONUS (будет отдельный символ)
 const WILD_EMOJI = '🥈'; // WILD символ (серебряная медаль)
@@ -65,6 +69,15 @@ let state = {
     autospinActive: false, // Флаг для отслеживания активного автоповтора
 };
 
+// --- СОСТОЯНИЕ ПОЛЬЗОВАТЕЛЯ ---
+let userState = {
+    isLoggedIn: false,
+    userId: null,
+    userNick: null,
+    lastSyncTime: 0,
+    syncInProgress: false
+};
+
 // --- ЭЛЕМЕНТЫ DOM ---
 const balanceEl = document.getElementById('balance');
 const betAmountEl = document.getElementById('bet-amount');
@@ -87,9 +100,232 @@ const modal = document.getElementById('modal');
 const modalContent = document.getElementById('modal-content');
 const closeModalBtn = document.getElementById('close-modal');
 
+// --- ЭЛЕМЕНТЫ АУТЕНТИФИКАЦИИ ---
+const loginSection = document.getElementById('login-section');
+const userSection = document.getElementById('user-section');
+const userIdInput = document.getElementById('user-id-input');
+const loginBtn = document.getElementById('login-btn');
+const logoutBtn = document.getElementById('logout-btn');
+const userNickEl = document.getElementById('user-nick');
+
 // --- УТИЛИТЫ ---
 function formatNumber(num) {
     return num.toLocaleString('ru-RU').replace(/\s/g, '.').replace(/,/g, '.');
+}
+
+// --- API ФУНКЦИИ ---
+async function fetchUserBalance(userId) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/balance/${userId}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Ошибка получения баланса:', error);
+        throw error;
+    }
+}
+
+async function updateUserBalance(userId, newBalance) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/balance/${userId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ balance: newBalance })
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Ошибка обновления баланса:', error);
+        throw error;
+    }
+}
+
+async function addToUserBalance(userId, amount) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/balance/${userId}/add`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ amount: amount })
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Ошибка добавления к балансу:', error);
+        throw error;
+    }
+}
+
+async function subtractFromUserBalance(userId, amount) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/balance/${userId}/subtract`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ amount: amount })
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Ошибка вычитания из баланса:', error);
+        throw error;
+    }
+}
+
+// --- ФУНКЦИИ АУТЕНТИФИКАЦИИ ---
+async function loginUser(userId) {
+    try {
+        const userData = await fetchUserBalance(userId);
+        userState.isLoggedIn = true;
+        userState.userId = userId;
+        userState.userNick = userData.nick;
+        
+        // Обновляем баланс из API
+        state.balance = userData.balance;
+        renderBalance();
+        
+        // Обновляем UI
+        updateAuthUI();
+        
+        // Запускаем синхронизацию
+        startBalanceSync();
+        
+        showNotification(`Добро пожаловать, ${userData.nick}!`);
+        return true;
+    } catch (error) {
+        showNotification('Ошибка входа. Проверьте правильность ID.');
+        return false;
+    }
+}
+
+// Функция для автоматического входа через Telegram Web App
+async function autoLoginFromTelegram() {
+    try {
+        // Проверяем, запущено ли приложение в Telegram Web App
+        if (window.Telegram && window.Telegram.WebApp) {
+            const tg = window.Telegram.WebApp;
+            
+            // Получаем данные пользователя из Telegram
+            const user = tg.initDataUnsafe?.user;
+            if (user && user.id) {
+                console.log('Telegram Web App detected, user ID:', user.id);
+                
+                // Автоматически входим с ID из Telegram
+                const success = await loginUser(user.id.toString());
+                if (success) {
+                    // Скрываем кнопку закрытия Telegram Web App
+                    tg.ready();
+                    tg.expand();
+                    return true;
+                }
+            }
+        }
+        return false;
+    } catch (error) {
+        console.error('Ошибка автоматического входа через Telegram:', error);
+        return false;
+    }
+}
+
+function logoutUser() {
+    userState.isLoggedIn = false;
+    userState.userId = null;
+    userState.userNick = null;
+    
+    // Останавливаем синхронизацию
+    stopBalanceSync();
+    
+    // Сбрасываем баланс на начальный
+    state.balance = START_BALANCE;
+    renderBalance();
+    
+    // Обновляем UI
+    updateAuthUI();
+    
+    showNotification('Вы вышли из системы');
+}
+
+function updateAuthUI() {
+    if (userState.isLoggedIn) {
+        loginSection.style.display = 'none';
+        userSection.style.display = 'flex';
+        userNickEl.textContent = userState.userNick;
+    } else {
+        loginSection.style.display = 'flex';
+        userSection.style.display = 'none';
+        userIdInput.value = '';
+    }
+}
+
+// --- СИНХРОНИЗАЦИЯ БАЛАНСА ---
+let syncInterval = null;
+
+function startBalanceSync() {
+    if (syncInterval) return;
+    
+    syncInterval = setInterval(async () => {
+        if (userState.isLoggedIn && !userState.syncInProgress) {
+            await syncBalanceFromAPI();
+        }
+    }, SYNC_INTERVAL);
+}
+
+function stopBalanceSync() {
+    if (syncInterval) {
+        clearInterval(syncInterval);
+        syncInterval = null;
+    }
+}
+
+async function syncBalanceFromAPI() {
+    if (!userState.isLoggedIn || userState.syncInProgress) return;
+    
+    userState.syncInProgress = true;
+    
+    try {
+        const userData = await fetchUserBalance(userState.userId);
+        if (userData.balance !== state.balance) {
+            state.balance = userData.balance;
+            renderBalance();
+            console.log('Баланс синхронизирован с сервером');
+        }
+    } catch (error) {
+        console.error('Ошибка синхронизации баланса:', error);
+    } finally {
+        userState.syncInProgress = false;
+    }
+}
+
+async function syncBalanceToAPI() {
+    if (!userState.isLoggedIn || userState.syncInProgress) return;
+    
+    userState.syncInProgress = true;
+    
+    try {
+        await updateUserBalance(userState.userId, state.balance);
+        console.log('Баланс отправлен на сервер');
+    } catch (error) {
+        console.error('Ошибка отправки баланса на сервер:', error);
+        showNotification('Ошибка синхронизации с сервером');
+    } finally {
+        userState.syncInProgress = false;
+    }
 }
 
 // --- АНИМАЦИЯ ВРАЩЕНИЯ БАРАБАНОВ ---
@@ -509,6 +745,11 @@ function spinBonus() {
         state.win += totalWin;
         state.lastWinLines = winLines;
         
+        // Синхронизируем с API если пользователь авторизован
+        if (userState.isLoggedIn) {
+            syncBalanceToAPI();
+        }
+        
         // Показываем выигрышные линии через некоторое время
         setTimeout(() => {
             renderReels(); // Перерисовываем с подсветкой выигрышных линий
@@ -541,6 +782,11 @@ function spin() {
     
     state.balance -= state.bet;
     renderBalance();
+    
+    // Синхронизируем с API если пользователь авторизован
+    if (userState.isLoggedIn) {
+        syncBalanceToAPI();
+    }
     
     // Генерируем новые символы
     const newReels = spinReels();
@@ -591,6 +837,11 @@ function spin() {
         state.win = totalWin;
         state.lastWinLines = winLines;
         
+        // Синхронизируем с API если пользователь авторизован
+        if (userState.isLoggedIn) {
+            syncBalanceToAPI();
+        }
+        
         // Добавляем в историю
         state.history.unshift({
             time: new Date().toLocaleTimeString(),
@@ -631,6 +882,46 @@ function spin() {
 
 // --- КНОПКИ И СОБЫТИЯ ---
 spinBtn.onclick = () => spin();
+
+// Обработчики аутентификации
+loginBtn.onclick = async () => {
+    const userId = userIdInput.value.trim();
+    if (!userId) {
+        showNotification('Введите ваш Telegram ID');
+        return;
+    }
+    
+    if (!/^\d+$/.test(userId)) {
+        showNotification('Telegram ID должен содержать только цифры');
+        return;
+    }
+    
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Вход...';
+    
+    const success = await loginUser(userId);
+    
+    loginBtn.disabled = false;
+    loginBtn.textContent = 'Войти';
+    
+    if (success) {
+        // Сохраняем ID в localStorage для автоматического входа
+        localStorage.setItem('slot_user_id', userId);
+    }
+};
+
+logoutBtn.onclick = () => {
+    logoutUser();
+    // Удаляем ID из localStorage
+    localStorage.removeItem('slot_user_id');
+};
+
+// Обработчик Enter в поле ввода ID
+userIdInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        loginBtn.click();
+    }
+});
 autospinBtn.onclick = () => {
     if (state.inBonus || state.bonusActive) return;
     
@@ -1154,10 +1445,25 @@ function initRadioPlayer() {
     updateTrackInfo();
 }
 
-function init() {
+async function init() {
     state.reels = spinReels();
     renderAll();
     initRadioPlayer();
+    
+    // Сначала пробуем автоматический вход через Telegram Web App
+    const telegramLoginSuccess = await autoLoginFromTelegram();
+    
+    // Если автоматический вход не удался, проверяем сохраненный ID
+    if (!telegramLoginSuccess) {
+        const savedUserId = localStorage.getItem('slot_user_id');
+        if (savedUserId) {
+            userIdInput.value = savedUserId;
+            // Автоматически входим
+            setTimeout(() => {
+                loginUser(savedUserId);
+            }, 1000);
+        }
+    }
 }
 
 init();
