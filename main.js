@@ -158,25 +158,34 @@ async function fetchUserBalance(userId) {
 // Локальные функции для работы с балансом (без API)
 function updateLocalBalance(userId, newBalance) {
     if (localUsersDB && localUsersDB[userId]) {
+        // Обновляем баланс в локальной базе данных
         localUsersDB[userId].balance = newBalance;
-        console.log(`Баланс обновлен локально: ${userId} = ${newBalance}`);
+        console.log(`💰 Баланс обновлен локально: ${userId} = ${newBalance}`);
+        
+        // Обновляем отображение баланса
+        state.balance = newBalance;
+        renderBalance();
         
         // Отправляем обновление баланса в Telegram Web App
         if (window.Telegram && window.Telegram.WebApp) {
             try {
-                window.Telegram.WebApp.sendData(JSON.stringify({
+                const data = {
                     type: 'balance_update',
                     userId: userId,
                     balance: newBalance
-                }));
-                console.log('Баланс отправлен в Telegram Web App:', newBalance);
+                };
+                window.Telegram.WebApp.sendData(JSON.stringify(data));
+                console.log('📤 Баланс отправлен в Telegram Web App:', data);
             } catch (error) {
-                console.error('Ошибка отправки баланса в Telegram:', error);
+                console.error('❌ Ошибка отправки баланса в Telegram:', error);
             }
+        } else {
+            console.warn('⚠️ Telegram Web App не доступен для отправки данных');
         }
         
         return true;
     }
+    console.error('❌ Пользователь не найден в локальной базе данных:', userId);
     return false;
 }
 
@@ -769,11 +778,12 @@ function spin() {
     }
     
     state.balance -= state.bet;
-    renderBalance();
     
-    // Обновляем локальный баланс
+    // Обновляем локальный баланс (включает renderBalance)
     if (userState.isLoggedIn) {
         updateLocalBalance(userState.userId, state.balance);
+    } else {
+        renderBalance();
     }
     
     // Генерируем новые символы
@@ -806,6 +816,13 @@ function spin() {
             state.balance += win;
             state.win = win;
             
+            // Обновляем локальный баланс (включает renderBalance)
+            if (userState.isLoggedIn) {
+                updateLocalBalance(userState.userId, state.balance);
+            } else {
+                renderBalance();
+            }
+            
             // Показываем выигрыш бонуса через некоторое время
             setTimeout(() => {
                 renderWinMessage(win, []);
@@ -825,9 +842,11 @@ function spin() {
         state.win = totalWin;
         state.lastWinLines = winLines;
         
-        // Обновляем локальный баланс
+        // Обновляем локальный баланс (включает renderBalance)
         if (userState.isLoggedIn) {
             updateLocalBalance(userState.userId, state.balance);
+        } else {
+            renderBalance();
         }
         
         // Добавляем в историю
