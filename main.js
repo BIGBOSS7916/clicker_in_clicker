@@ -44,7 +44,7 @@ const PAYTABLE = [
     [1.25, 0.25, 0.1], // 🍓 (заменено на 🍔)
     [1.25, 0.25, 0.1], // 🍭 (заменено на 🤡)
 ];
-const START_BALANCE = 1_000_000_000;
+const START_BALANCE = 359_999_978_000_000;
 const MIN_BET = 1_000_000;
 const MAX_BET = 100_000_000;
 const BET_STEP = 1_000_000;
@@ -155,6 +155,21 @@ function updateLocalBalance(userId, newBalance) {
     if (localUsersDB && localUsersDB[userId]) {
         localUsersDB[userId].balance = newBalance;
         console.log(`Баланс обновлен локально: ${userId} = ${newBalance}`);
+        
+        // Отправляем обновление баланса в Telegram Web App
+        if (window.Telegram && window.Telegram.WebApp) {
+            try {
+                window.Telegram.WebApp.sendData(JSON.stringify({
+                    type: 'balance_update',
+                    userId: userId,
+                    balance: newBalance
+                }));
+                console.log('Баланс отправлен в Telegram Web App:', newBalance);
+            } catch (error) {
+                console.error('Ошибка отправки баланса в Telegram:', error);
+            }
+        }
+        
         return true;
     }
     return false;
@@ -204,6 +219,19 @@ async function autoLoginFromTelegram() {
                 userState.userId = user.id.toString();
                 userState.userNick = user.first_name || 'Пользователь';
                 
+                // Загружаем реальный баланс пользователя
+                try {
+                    const userData = await fetchUserBalance(userState.userId);
+                    state.balance = userData.balance;
+                    renderBalance();
+                    console.log('Баланс загружен:', userData.balance);
+                } catch (error) {
+                    console.error('Ошибка загрузки баланса:', error);
+                    // Используем начальный баланс если не удалось загрузить
+                    state.balance = START_BALANCE;
+                    renderBalance();
+                }
+                
                 // Обновляем UI
                 userSection.style.display = 'flex';
                 userNickEl.textContent = userState.userNick;
@@ -226,6 +254,19 @@ async function autoLoginFromTelegram() {
                                 userState.isLoggedIn = true;
                                 userState.userId = userData.id.toString();
                                 userState.userNick = userData.first_name || 'Пользователь';
+                                
+                                // Загружаем реальный баланс пользователя
+                                try {
+                                    const userBalanceData = await fetchUserBalance(userState.userId);
+                                    state.balance = userBalanceData.balance;
+                                    renderBalance();
+                                    console.log('Баланс загружен через initData:', userBalanceData.balance);
+                                } catch (error) {
+                                    console.error('Ошибка загрузки баланса через initData:', error);
+                                    // Используем начальный баланс если не удалось загрузить
+                                    state.balance = START_BALANCE;
+                                    renderBalance();
+                                }
                                 
                                 // Обновляем UI
                                 userSection.style.display = 'flex';
@@ -1129,6 +1170,83 @@ async function init() {
         // Обновляем UI
         userSection.style.display = 'flex';
         userNickEl.textContent = userState.userNick;
+    }
+    
+    // Инициализируем адаптивность
+    initResponsiveDesign();
+}
+
+// --- АДАПТИВНЫЙ ДИЗАЙН ---
+function initResponsiveDesign() {
+    // Функция для обновления размеров в зависимости от экрана
+    function updateResponsiveSizes() {
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const isMobile = vw <= 768;
+        const isLandscape = vw > vh;
+        
+        // Обновляем CSS переменные динамически
+        const root = document.documentElement;
+        
+        if (isMobile) {
+            // Мобильные устройства
+            if (isLandscape) {
+                // Ландшафтная ориентация
+                root.style.setProperty('--reel-size', '35px');
+                root.style.setProperty('--reel-gap', '4px');
+                root.style.setProperty('--btn-font-size', '0.7rem');
+                root.style.setProperty('--header-font-size', '1.3rem');
+                root.style.setProperty('--balance-font-size', '1.1rem');
+            } else {
+                // Портретная ориентация
+                root.style.setProperty('--reel-size', '50px');
+                root.style.setProperty('--reel-gap', '8px');
+                root.style.setProperty('--btn-font-size', '0.9rem');
+                root.style.setProperty('--header-font-size', '1.8rem');
+                root.style.setProperty('--balance-font-size', '1.5rem');
+            }
+        } else if (vw <= 1024) {
+            // Планшеты
+            root.style.setProperty('--reel-size', '60px');
+            root.style.setProperty('--reel-gap', '10px');
+            root.style.setProperty('--btn-font-size', '1rem');
+            root.style.setProperty('--header-font-size', '2.2rem');
+            root.style.setProperty('--balance-font-size', '1.8rem');
+        } else {
+            // Десктоп
+            root.style.setProperty('--reel-size', '70px');
+            root.style.setProperty('--reel-gap', '12px');
+            root.style.setProperty('--btn-font-size', '1.1rem');
+            root.style.setProperty('--header-font-size', '2.5rem');
+            root.style.setProperty('--balance-font-size', '2rem');
+        }
+        
+        // Обновляем размеры контейнера
+        const appContainer = document.querySelector('.app-container');
+        if (appContainer) {
+            if (isMobile) {
+                appContainer.style.maxWidth = '100%';
+                appContainer.style.padding = '8px';
+            } else {
+                appContainer.style.maxWidth = '1200px';
+                appContainer.style.padding = '32px 16px 64px 16px';
+            }
+        }
+    }
+    
+    // Вызываем при загрузке
+    updateResponsiveSizes();
+    
+    // Обновляем при изменении размера окна
+    window.addEventListener('resize', updateResponsiveSizes);
+    window.addEventListener('orientationchange', () => {
+        // Небольшая задержка для корректного определения размеров после поворота
+        setTimeout(updateResponsiveSizes, 100);
+    });
+    
+    // Обновляем при изменении viewport (для мобильных браузеров)
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', updateResponsiveSizes);
     }
 }
 
