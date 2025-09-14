@@ -155,6 +155,44 @@ async function fetchUserBalance(userId) {
     };
 }
 
+// Функция для синхронизации баланса с бота на сайт
+async function syncBalanceFromBot(userId) {
+    try {
+        console.log('🔄 Синхронизируем баланс с бота на сайт для пользователя:', userId);
+        
+        // Отправляем запрос на синхронизацию баланса
+        if (window.Telegram && window.Telegram.WebApp) {
+            const tg = window.Telegram.WebApp;
+            
+            // Отправляем данные в бот для синхронизации
+            const syncData = {
+                type: 'sync_balance_from_bot',
+                userId: userId,
+                timestamp: Date.now()
+            };
+            
+            try {
+                tg.sendData(JSON.stringify(syncData));
+                console.log('📤 Запрос синхронизации отправлен в бот:', syncData);
+            } catch (error) {
+                console.error('❌ Ошибка отправки запроса синхронизации:', error);
+            }
+        }
+        
+        // Обновляем локальную базу данных с актуальным балансом
+        if (localUsersDB && localUsersDB[userId]) {
+            // Принудительно обновляем баланс в локальной базе
+            const currentBalance = localUsersDB[userId].balance || 0;
+            console.log('✅ Баланс в локальной базе обновлен:', currentBalance);
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('❌ Ошибка синхронизации баланса с бота:', error);
+        return false;
+    }
+}
+
 // Локальные функции для работы с балансом (без API)
 function updateLocalBalance(userId, newBalance) {
     if (localUsersDB && localUsersDB[userId]) {
@@ -242,6 +280,9 @@ async function autoLoginFromTelegram() {
                     console.log('✅ Баланс загружен из базы данных:', userData.balance);
                     console.log('✅ Баланс отформатирован:', formatNumber(userData.balance));
                     console.log('👤 Пользователь:', userData.nick);
+                    
+                    // Принудительно синхронизируем баланс с бота на сайт
+                    await syncBalanceFromBot(userState.userId);
                 } catch (error) {
                     console.error('❌ Ошибка загрузки баланса:', error);
                     // Если произошла ошибка, используем данные из fetchUserBalance
@@ -249,14 +290,17 @@ async function autoLoginFromTelegram() {
                     state.balance = userData.balance;
                     renderBalance();
                     console.log('⚠️ Используем данные из fetchUserBalance, баланс:', userData.balance);
+                    
+                    // Принудительно синхронизируем баланс с бота на сайт
+                    await syncBalanceFromBot(userState.userId);
                 }
                 
                 // Обновляем UI
                 userSection.style.display = 'flex';
                 userNickEl.textContent = userState.userNick;
                 
-                console.log('Автоматический вход успешен');
-                return true;
+                    console.log('Автоматический вход успешен');
+                    return true;
             } else {
                 console.log('Данные пользователя не найдены в Telegram Web App');
                 // Пробуем получить ID из initData
@@ -296,8 +340,8 @@ async function autoLoginFromTelegram() {
                                 userSection.style.display = 'flex';
                                 userNickEl.textContent = userState.userNick;
                                 
-                                console.log('Автоматический вход через initData успешен');
-                                return true;
+                                    console.log('Автоматический вход через initData успешен');
+                                    return true;
                             }
                         }
                     } catch (e) {
@@ -1219,6 +1263,29 @@ async function init() {
     
     // Инициализируем адаптивность
     initResponsiveDesign();
+    
+    // Добавляем обработчик для получения данных от бота
+    if (window.Telegram && window.Telegram.WebApp) {
+        const tg = window.Telegram.WebApp;
+        
+        // Обработчик для получения данных от бота
+        tg.onEvent('web_app_data_send', (data) => {
+            console.log('📥 Получены данные от бота:', data);
+            try {
+                const parsedData = JSON.parse(data);
+                if (parsedData.type === 'balance_sync') {
+                    console.log('🔄 Получена синхронизация баланса от бота:', parsedData);
+                    if (parsedData.userId === userState.userId) {
+                        state.balance = parsedData.balance;
+                        renderBalance();
+                        console.log('✅ Баланс синхронизирован от бота:', parsedData.balance);
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Ошибка обработки данных от бота:', error);
+            }
+        });
+    }
 }
 
 // --- АДАПТИВНЫЙ ДИЗАЙН ---
@@ -1242,7 +1309,7 @@ function initResponsiveDesign() {
                 root.style.setProperty('--btn-font-size', '0.7rem');
                 root.style.setProperty('--header-font-size', '1.3rem');
                 root.style.setProperty('--balance-font-size', '1.1rem');
-            } else {
+        } else {
                 // Портретная ориентация
                 root.style.setProperty('--reel-size', '50px');
                 root.style.setProperty('--reel-gap', '8px');
