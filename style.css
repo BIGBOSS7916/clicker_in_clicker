@@ -17,6 +17,17 @@
     --win: #00e676;
     --lose: #ff1744;
     --shadow: 0 4px 24px 0 rgba(0,0,0,0.25);
+    
+    /* Dynamic sizing variables */
+    --container-padding: clamp(8px, 4vw, 32px);
+    --header-padding: clamp(12px, 3vw, 32px);
+    --reel-size: clamp(42px, 8vw, 70px);
+    --reel-gap: clamp(6px, 1.5vw, 12px);
+    --btn-padding: clamp(8px, 2vw, 16px);
+    --btn-font-size: clamp(0.8rem, 2.5vw, 1.1rem);
+    --header-font-size: clamp(1.5rem, 5vw, 2.5rem);
+    --balance-font-size: clamp(1.3rem, 4vw, 2rem);
+    --logo-size: clamp(1.8rem, 6vw, 3rem);
 }
 
 * {
@@ -36,8 +47,11 @@ body {
 .app-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 32px 16px 64px 16px;
+    padding: var(--container-padding);
     position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Header - Department name at top */
@@ -47,11 +61,11 @@ body {
     align-items: center;
     background: var(--header-bg);
     border-radius: 18px;
-    padding: 24px 32px;
-    margin-bottom: 32px;
+    padding: var(--header-padding);
+    margin-bottom: clamp(16px, 4vw, 32px);
     box-shadow: var(--shadow);
     flex-wrap: wrap;
-    gap: 16px;
+    gap: clamp(8px, 2vw, 16px);
 }
 
 .logo-title {
@@ -61,35 +75,35 @@ body {
 }
 
 .logo {
-    font-size: 3rem;
+    font-size: var(--logo-size);
     filter: drop-shadow(0 2px 8px #ffb30088);
 }
 
 .header h1 {
-    font-size: 2.5rem;
+    font-size: var(--header-font-size);
     font-weight: 900;
-    letter-spacing: 2px;
+    letter-spacing: clamp(0.5px, 0.5vw, 2px);
     color: var(--accent);
     text-shadow: 0 2px 8px #ffb30044;
 }
 
 .balance-container {
-    font-size: 1.5rem;
+    font-size: clamp(1rem, 3vw, 1.5rem);
     font-weight: 700;
     background: var(--reel-bg);
     border-radius: 12px;
-    padding: 10px 24px;
+    padding: clamp(6px, 2vw, 10px) clamp(12px, 4vw, 24px);
     box-shadow: 0 2px 8px #0002;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: clamp(6px, 1.5vw, 10px);
 }
 
 .balance {
     color: var(--accent3);
-    font-size: 2rem;
+    font-size: var(--balance-font-size);
     font-weight: 900;
-    letter-spacing: 1px;
+    letter-spacing: clamp(0.5px, 0.3vw, 1px);
     text-shadow: 0 2px 8px #00c3ff44;
 }
 
@@ -98,39 +112,40 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 32px;
+    gap: clamp(16px, 4vw, 32px);
+    flex: 1;
 }
 
 .slot-machine {
     background: var(--reel-bg);
     border-radius: 24px;
     box-shadow: var(--shadow);
-    padding: 32px 24px 24px 24px;
-    margin-bottom: 16px;
+    padding: clamp(16px, 4vw, 32px) clamp(12px, 3vw, 24px);
+    margin-bottom: clamp(8px, 2vw, 16px);
     width: 100%;
     max-width: 600px;
 }
 
 .reels {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    grid-template-rows: repeat(3, 1fr);
-    gap: 8px;
-    margin-bottom: 24px;
-    max-width: 400px;
-    margin: 0 auto 24px auto;
+    grid-template-columns: repeat(5, var(--reel-size));
+    grid-template-rows: repeat(3, var(--reel-size));
+    gap: var(--reel-gap);
+    margin-bottom: clamp(12px, 3vw, 24px);
+    max-width: calc(5 * var(--reel-size) + 4 * var(--reel-gap));
+    margin: 0 auto clamp(12px, 3vw, 24px) auto;
 }
 
 .reel-cell {
-    width: 60px;
-    height: 60px;
+    width: var(--reel-size);
+    height: var(--reel-size);
     background: linear-gradient(135deg, #1a1d22 0%, #23272e 100%);
     border: 2px solid var(--reel-border);
-    border-radius: 12px;
+    border-radius: clamp(8px, 2vw, 12px);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2rem;
+    font-size: clamp(1.2rem, 4vw, 2rem);
     font-weight: 700;
     transition: all 0.3s ease;
     box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
@@ -283,7 +298,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px;
+    gap: clamp(12px, 3vw, 20px);
     width: 100%;
     max-width: 600px;
 }
@@ -291,20 +306,21 @@ body {
 .bet-controls {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: clamp(8px, 2vw, 16px);
 }
 
 .bet-btn {
     background: var(--accent3);
     color: #fff;
-    font-size: 1.2rem;
+    font-size: clamp(1rem, 3vw, 1.2rem);
     font-weight: 700;
     border: none;
     border-radius: 8px;
-    padding: 8px 16px;
+    padding: var(--btn-padding);
     cursor: pointer;
     transition: all 0.2s;
-    min-width: 40px;
+    min-width: clamp(35px, 8vw, 40px);
+    min-height: 44px;
 }
 
 .bet-btn:hover {
@@ -315,18 +331,18 @@ body {
 .bet-amount {
     background: var(--reel-bg);
     color: var(--accent3);
-    font-size: 1.2rem;
+    font-size: clamp(1rem, 3vw, 1.2rem);
     font-weight: 700;
-    padding: 8px 16px;
+    padding: var(--btn-padding);
     border-radius: 8px;
     border: 2px solid var(--accent3);
-    min-width: 120px;
+    min-width: clamp(80px, 20vw, 120px);
     text-align: center;
 }
 
 .main-buttons {
     display: flex;
-    gap: 12px;
+    gap: clamp(8px, 2vw, 12px);
     flex-wrap: wrap;
     justify-content: center;
 }
@@ -334,16 +350,19 @@ body {
 .main-btn {
     background: var(--btn-bg);
     color: var(--btn-text);
-    font-size: 1.1rem;
+    font-size: var(--btn-font-size);
     font-weight: 700;
     border: none;
-    border-radius: 12px;
-    padding: 12px 24px;
+    border-radius: clamp(8px, 2vw, 12px);
+    padding: var(--btn-padding);
     cursor: pointer;
     transition: all 0.2s;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: clamp(0.5px, 0.3vw, 1px);
     box-shadow: 0 4px 16px rgba(255, 179, 0, 0.3);
+    min-height: 44px;
+    flex: 1;
+    max-width: clamp(80px, 20vw, 150px);
 }
 
 .main-btn:hover {
@@ -377,19 +396,23 @@ body {
 
 .info-controls {
     display: flex;
-    gap: 12px;
+    gap: clamp(8px, 2vw, 12px);
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 .info-btn {
     background: var(--reel-bg);
     color: #fff;
-    font-size: 1rem;
+    font-size: clamp(0.8rem, 2.5vw, 1rem);
     font-weight: 700;
     border: 2px solid var(--accent3);
-    border-radius: 10px;
-    padding: 10px 20px;
+    border-radius: clamp(8px, 2vw, 10px);
+    padding: var(--btn-padding);
     cursor: pointer;
     transition: all 0.2s;
+    min-height: 44px;
+    min-width: clamp(60px, 15vw, 100px);
 }
 
 .info-btn:hover {
@@ -3218,6 +3241,217 @@ body {
 }
 
 /* Telegram Web App specific optimizations */
+@media (max-width: 768px) {
+    /* Telegram Web App viewport optimization */
+    body {
+        height: 100vh;
+        height: 100dvh; /* Dynamic viewport height for mobile browsers */
+        overflow: hidden;
+    }
+    
+    .app-container {
+        height: 100vh;
+        height: 100dvh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+    
+    /* Prevent overscroll bounce on iOS */
+    .app-container {
+        overscroll-behavior: contain;
+    }
+    
+    /* Optimize for Telegram Web App header */
+    .header {
+        margin-top: env(safe-area-inset-top, 0px);
+        padding-top: max(12px, env(safe-area-inset-top, 0px) + 8px);
+    }
+    
+    /* Better touch targets for Telegram Web App */
+    .bet-btn, .main-btn, .info-btn, .paylines-btn {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+    
+    /* Active states for better touch feedback */
+    .bet-btn:active, .main-btn:active, .info-btn:active {
+        transform: scale(0.95);
+    }
+    
+    /* Optimize sidebar for mobile */
+    .sidebar {
+        width: 100vw;
+        max-width: 100vw;
+        right: -100vw;
+    }
+    
+    .sidebar.open {
+        right: 0;
+    }
+    
+    /* Optimize modal for mobile */
+    .modal-content {
+        width: 95vw;
+        max-width: 95vw;
+        margin: 5vh auto;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+}
+
+/* High DPI display optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .reel-cell, .main-btn, .bet-btn, .info-btn {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+}
+
+/* Dark mode optimizations */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --main-bg: #1a1d22;
+        --header-bg: #14161a;
+        --reel-bg: #23272e;
+    }
+}
+
+/* Landscape mobile optimization */
+@media (max-width: 768px) and (orientation: landscape) {
+    .app-container {
+        padding: 8px;
+    }
+    
+    .header {
+        padding: 8px 16px;
+        margin-bottom: 12px;
+        flex-direction: row;
+        text-align: left;
+    }
+    
+    .logo-title {
+        gap: 8px;
+    }
+    
+    .logo {
+        font-size: 1.5rem;
+    }
+    
+    .header h1 {
+        font-size: 1.3rem;
+    }
+    
+    .balance-container {
+        font-size: 0.9rem;
+        padding: 4px 8px;
+    }
+    
+    .balance {
+        font-size: 1.1rem;
+    }
+    
+    .slot-machine {
+        padding: 12px 8px 8px 8px;
+        margin-bottom: 8px;
+    }
+    
+    .reels {
+        gap: 4px;
+        max-width: 200px;
+        margin-bottom: 8px;
+    }
+    
+    .reel-cell {
+        width: 35px;
+        height: 35px;
+        font-size: 0.9rem;
+    }
+    
+    .controls {
+        gap: 8px;
+    }
+    
+    .main-buttons {
+        gap: 6px;
+    }
+    
+    .main-btn {
+        font-size: 0.7rem;
+        padding: 6px 8px;
+        min-width: 60px;
+    }
+    
+    .bet-btn {
+        font-size: 0.8rem;
+        padding: 4px 8px;
+        min-width: 30px;
+    }
+    
+    .bet-amount {
+        font-size: 0.8rem;
+        padding: 4px 8px;
+        min-width: 70px;
+    }
+    
+    .info-btn {
+        font-size: 0.7rem;
+        padding: 4px 8px;
+        min-width: 50px;
+    }
+}
+
+/* Ultra-wide screens optimization */
+@media (min-width: 1920px) {
+    .app-container {
+        max-width: 1400px;
+    }
+    
+    .slot-machine {
+        max-width: 700px;
+    }
+    
+    .reels {
+        max-width: 600px;
+    }
+    
+    .controls {
+        max-width: 700px;
+    }
+}
+
+/* Container queries for even better responsiveness */
+@container (max-width: 400px) {
+    .main-buttons {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+    
+    .main-btn {
+        font-size: 0.8rem;
+        padding: 8px 12px;
+    }
+}
+
+/* Scrollbar styling for webkit browsers */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--reel-bg);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent2);
+}
 @media (max-width: 768px) {
     /* Optimize for Telegram Web App viewport */
     body {
