@@ -15,6 +15,16 @@
                 <span class="logo">🐶</span>
                 <h1>Dog House Slot</h1>
             </div>
+            <div class="user-info">
+                <div id="login-section" class="login-section">
+                    <input type="text" id="user-id-input" placeholder="Введите ваш Telegram ID" class="user-id-input">
+                    <button id="login-btn" class="login-btn">Войти</button>
+                </div>
+                <div id="user-section" class="user-section" style="display: none;">
+                    <span id="user-nick" class="user-nick"></span>
+                    <button id="logout-btn" class="logout-btn">Выйти</button>
+                </div>
+            </div>
             <div class="balance-container">
                 <span>Баланс:</span>
                 <span id="balance" class="balance">$1.000.000.000</span>
@@ -123,6 +133,8 @@
         <div class="notification" id="notification"></div>
     </div>
 
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="config.js"></script>
     <script src="main.js"></script>
 </body>
 </html> 
