@@ -260,10 +260,25 @@ document.addEventListener('DOMContentLoaded', function() {
     async function syncAllBalances() {
         try {
             if (!BOT_API_URL || BOT_API_URL === "http://localhost:5000") {
+                // Если API не настроен, используем синхронизацию через Telegram Web App
+                if (window.Telegram && window.Telegram.WebApp && userState.isLoggedIn) {
+                    console.log('🔄 Запрашиваем баланс через Telegram Web App...');
+                    const syncData = {
+                        type: 'sync_balance_from_bot',
+                        userId: userState.userId,
+                        timestamp: Date.now()
+                    };
+                    try {
+                        window.Telegram.WebApp.sendData(JSON.stringify(syncData));
+                        console.log('📤 Запрос синхронизации отправлен через Telegram Web App');
+                    } catch (error) {
+                        console.error('❌ Ошибка отправки запроса через Telegram Web App:', error);
+                    }
+                }
                 return;
             }
             
-            console.log('🔄 Синхронизируем все балансы с бота...');
+            console.log('🔄 Синхронизируем все балансы с бота через API...');
             const allBalances = await fetchAllBalancesFromAPI();
             if (allBalances) {
                 // Обновляем локальную базу данных
@@ -277,15 +292,45 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (state.balance !== newBalance) {
                             state.balance = newBalance;
                             renderBalance();
-                            console.log('✅ Баланс обновлен:', newBalance);
+                            console.log('✅ Баланс обновлен через API:', newBalance);
                         }
                     }
                 }
                 
-                console.log('✅ Все балансы синхронизированы');
+                console.log('✅ Все балансы синхронизированы через API');
+            } else {
+                // Если API недоступен, используем Telegram Web App
+                if (window.Telegram && window.Telegram.WebApp && userState.isLoggedIn) {
+                    console.log('⚠️ API недоступен, используем Telegram Web App для синхронизации');
+                    const syncData = {
+                        type: 'sync_balance_from_bot',
+                        userId: userState.userId,
+                        timestamp: Date.now()
+                    };
+                    try {
+                        window.Telegram.WebApp.sendData(JSON.stringify(syncData));
+                        console.log('📤 Запрос синхронизации отправлен через Telegram Web App');
+                    } catch (error) {
+                        console.error('❌ Ошибка отправки запроса через Telegram Web App:', error);
+                    }
+                }
             }
         } catch (error) {
             console.error('❌ Ошибка синхронизации всех балансов:', error);
+            // Fallback на Telegram Web App
+            if (window.Telegram && window.Telegram.WebApp && userState.isLoggedIn) {
+                try {
+                    const syncData = {
+                        type: 'sync_balance_from_bot',
+                        userId: userState.userId,
+                        timestamp: Date.now()
+                    };
+                    window.Telegram.WebApp.sendData(JSON.stringify(syncData));
+                    console.log('📤 Fallback: запрос отправлен через Telegram Web App');
+                } catch (e) {
+                    console.error('❌ Ошибка fallback синхронизации:', e);
+                }
+            }
         }
     }
     
@@ -1388,23 +1433,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (window.Telegram && window.Telegram.WebApp) {
             const tg = window.Telegram.WebApp;
             
-            // Обработчик для получения данных от бота
-            tg.onEvent('web_app_data_send', (data) => {
-                console.log('📥 Получены данные от бота:', data);
-                try {
-                    const parsedData = JSON.parse(data);
-                    if (parsedData.type === 'balance_sync') {
-                        console.log('🔄 Получена синхронизация баланса от бота:', parsedData);
-                        if (parsedData.userId === userState.userId) {
-                            state.balance = parsedData.balance;
-                            renderBalance();
-                            console.log('✅ Баланс синхронизирован от бота:', parsedData.balance);
-                        }
-                    }
-                } catch (error) {
-                    console.error('❌ Ошибка обработки данных от бота:', error);
-                }
+            // Обработчик для получения данных от бота через MainButton
+            tg.onEvent('mainButtonClicked', () => {
+                console.log('📥 MainButton clicked');
             });
+            
+            // Обработчик для получения данных от бота через sendData
+            // Telegram Web App может получать данные через специальные события
+            // Но основная синхронизация идет через периодические запросы
         }
         
         // Запускаем периодическую синхронизацию балансов
