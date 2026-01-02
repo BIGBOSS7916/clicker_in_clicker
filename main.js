@@ -122,14 +122,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- ЗАГРУЗКА ЛОКАЛЬНОЙ БАЗЫ ДАННЫХ ---
     async function loadLocalUsersDB() {
         try {
-            const response = await fetch('./users_db.json');
+            // Добавляем версию к файлу, чтобы обойти кэш браузера и GitHub Pages
+            const response = await fetch(`./users_db.json?v=${Date.now()}`);
             if (response.ok) {
                 localUsersDB = await response.json();
-                console.log('Локальная база данных загружена:', Object.keys(localUsersDB).length, 'пользователей');
+                console.log('✅ Локальная база данных загружена:', Object.keys(localUsersDB).length, 'пользователей');
                 return true;
             }
         } catch (error) {
-            console.error('Ошибка загрузки локальной базы данных:', error);
+            console.error('❌ Ошибка загрузки локальной базы данных:', error);
         }
         return false;
     }
