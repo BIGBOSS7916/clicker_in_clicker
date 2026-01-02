@@ -138,66 +138,121 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- ФУНКЦИИ ДЛЯ РАБОТЫ С API БОТА ---
     async function fetchBalanceFromAPI(userId) {
         try {
-            const response = await fetch(`${BOT_API_URL}/api/balance/${userId}`);
+            console.log(`🔍 Запрос баланса через API: ${BOT_API_URL}/api/balance/${userId}`);
+            const response = await fetch(`${BOT_API_URL}/api/balance/${userId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                // Добавляем кэш-бастер, чтобы всегда получать актуальные данные
+                cache: 'no-cache'
+            });
+            
             if (response.ok) {
                 const data = await response.json();
+                console.log('✅ Ответ от API:', data);
                 return {
                     user_id: userId,
                     balance: data.balance || 0,
                     nick: data.nick || 'Unknown'
                 };
+            } else {
+                console.error(`❌ API вернул ошибку: ${response.status} ${response.statusText}`);
             }
         } catch (error) {
             console.error('❌ Ошибка запроса баланса через API:', error);
+            console.error('Детали ошибки:', error.message);
         }
         return null;
     }
     
     async function fetchAllBalancesFromAPI() {
         try {
-            const response = await fetch(`${BOT_API_URL}/api/balances/all`);
+            console.log(`🔍 Запрос всех балансов через API: ${BOT_API_URL}/api/balances/all`);
+            const response = await fetch(`${BOT_API_URL}/api/balances/all`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                cache: 'no-cache'
+            });
             if (response.ok) {
                 const data = await response.json();
+                console.log('✅ Получены все балансы через API, пользователей:', Object.keys(data).length);
                 return data;
+            } else {
+                console.error(`❌ API вернул ошибку: ${response.status} ${response.statusText}`);
             }
         } catch (error) {
             console.error('❌ Ошибка запроса всех балансов через API:', error);
+            console.error('Детали ошибки:', error.message);
         }
         return null;
     }
     
     // --- ЛОКАЛЬНЫЕ ФУНКЦИИ (с поддержкой API) ---
     async function fetchUserBalance(userId) {
-        console.log('Поиск пользователя:', userId);
-        console.log('Локальная база данных загружена:', !!localUsersDB);
+        console.log('🔍 Поиск пользователя:', userId);
+        console.log('📦 Локальная база данных загружена:', !!localUsersDB);
+        console.log('🌐 API URL:', BOT_API_URL);
         
-        // Сначала пробуем получить баланс через API бота
+        // ПРИОРИТЕТ 1: Пробуем получить баланс через API бота
         if (BOT_API_URL && BOT_API_URL !== "http://localhost:5000") {
+            console.log('🔄 Пробуем получить баланс через API...');
             const apiBalance = await fetchBalanceFromAPI(userId);
-            if (apiBalance) {
-                console.log('✅ Баланс получен через API:', apiBalance);
+            if (apiBalance && apiBalance.balance !== undefined) {
+                console.log('✅ Баланс получен через API:', apiBalance.balance);
                 // Обновляем локальную базу данных
                 if (!localUsersDB) localUsersDB = {};
                 if (!localUsersDB[userId]) localUsersDB[userId] = {};
                 localUsersDB[userId].balance = apiBalance.balance;
                 localUsersDB[userId].nick = apiBalance.nick;
                 return apiBalance;
+            } else {
+                console.warn('⚠️ API не вернул баланс, пробуем другие источники...');
+            }
+        } else {
+            console.warn('⚠️ API URL не настроен или равен localhost');
+        }
+        
+        // ПРИОРИТЕТ 2: Пробуем Telegram Web App для синхронизации
+        if (window.Telegram && window.Telegram.WebApp) {
+            console.log('🔄 Пробуем синхронизацию через Telegram Web App...');
+            try {
+                await syncBalanceFromBot(userId);
+                // После синхронизации пробуем API еще раз
+                const apiBalance = await fetchBalanceFromAPI(userId);
+                if (apiBalance && apiBalance.balance !== undefined) {
+                    console.log('✅ Баланс получен через API после синхронизации:', apiBalance.balance);
+                    return apiBalance;
+                }
+            } catch (error) {
+                console.error('❌ Ошибка синхронизации через Web App:', error);
             }
         }
         
-        // Если API недоступен, используем локальную базу данных
+        // ПРИОРИТЕТ 3: Используем локальную базу данных ТОЛЬКО если баланс > 0
+        // Это предотвращает использование файла с балансом 0
         if (localUsersDB && localUsersDB[userId]) {
             const userData = localUsersDB[userId];
-            console.log('Пользователь найден в локальной базе:', userData);
-            return {
-                user_id: userId,
-                balance: userData.balance || 0,
-                nick: userData.nick || 'Unknown'
-            };
+            const fileBalance = userData.balance || 0;
+            console.log('📁 Пользователь найден в локальной базе, баланс:', fileBalance);
+            
+            // НЕ используем файл, если баланс 0 - это может быть устаревший файл
+            if (fileBalance > 0) {
+                console.log('✅ Используем баланс из файла:', fileBalance);
+                return {
+                    user_id: userId,
+                    balance: fileBalance,
+                    nick: userData.nick || 'Unknown'
+                };
+            } else {
+                console.warn('⚠️ Баланс в файле равен 0, игнорируем файл');
+            }
         }
         
-        console.log('Пользователь не найден в локальной базе');
-        // Для новых пользователей возвращаем нулевой баланс
+        console.log('❌ Пользователь не найден или баланс недоступен');
+        // Возвращаем 0 только если действительно не удалось получить баланс
         return {
             user_id: userId,
             balance: 0,
