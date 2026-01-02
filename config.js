@@ -1,7 +1,2 @@
-// Локальная версия - API отключен
-// Работаем только с локальной базой данных users_db.json
-
-const LOCAL_MODE = true;
-
-// Экспортируем для использования в main.js
-window.LOCAL_MODE = LOCAL_MODE;
+window.BOT_API_URL = "http://212.80.7.13:5000"; 
+window.LOCAL_MODE = false;
