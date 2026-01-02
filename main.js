@@ -742,7 +742,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // --- ОТРИСОВКА ---
     function renderBalance() {
-        const formattedBalance = '$' + formatNumber(state.balance);
+        const formattedBalance = '₽' + formatNumber(state.balance);
         balanceEl.textContent = formattedBalance;
         console.log('💰 Отображение баланса:', {
             raw: state.balance,
@@ -751,7 +751,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     function renderBet() {
-        betAmountEl.textContent = '$' + formatNumber(state.bet);
+        betAmountEl.textContent = '₽' + formatNumber(state.bet);
     }
     function renderReels() {
         reelsEl.innerHTML = '';
@@ -780,7 +780,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     function renderWinMessage(win, lines) {
         if (win > 0) {
-            winMessageEl.textContent = `Выигрыш: +$${formatNumber(win)}`;
+            winMessageEl.textContent = `Выигрыш: +₽${formatNumber(win)}`;
             winMessageEl.style.color = 'var(--win)';
         } else {
             winMessageEl.textContent = '';
@@ -898,7 +898,7 @@ document.addEventListener('DOMContentLoaded', function() {
             state.inBonus = false;
             state.bonusActive = false;
             state.stickyWilds = [];
-            showModal(`<h2>БОНУСКА завершена!</h2><p>Ваш выигрыш: <b>${formatNumber(state.win)}</b></p>`);
+            showModal(`<h2>БОНУСКА завершена!</h2><p>Ваш выигрыш: <b>₽${formatNumber(state.win)}</b></p>`);
             setTimeout(closeModal, 2500);
             return;
         }
@@ -1345,7 +1345,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="stat-card">
                         <div class="stat-icon">💰</div>
                         <div class="stat-content">
-                            <div class="stat-value">${formatNumber(state.history.reduce((sum, h) => sum + h.win, 0))}</div>
+                            <div class="stat-value">₽${formatNumber(state.history.reduce((sum, h) => sum + h.win, 0))}</div>
                             <div class="stat-label">Общий выигрыш</div>
                         </div>
                     </div>
@@ -1368,11 +1368,11 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="history-details">
                                 <div class="bet-info">
                                     <span class="bet-label">Ставка:</span>
-                                    <span class="bet-amount">${formatNumber(h.bet)}</span>
+                                    <span class="bet-amount">₽${formatNumber(h.bet)}</span>
                                 </div>
                                 <div class="win-info">
                                     <span class="win-label">Выигрыш:</span>
-                                    <span class="win-amount ${h.win > 0 ? 'positive' : 'negative'}">${formatNumber(h.win)}</span>
+                                    <span class="win-amount ${h.win > 0 ? 'positive' : 'negative'}">₽${formatNumber(h.win)}</span>
                                 </div>
                                 ${h.lines.length > 0 ? `
                                     <div class="lines-info">
