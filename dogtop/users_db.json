@@ -8087,7 +8087,7 @@
   "7713977649": {
     "nick": "ᅠ ᅠ ᅠ TeD",
     "tg_username": "CJLOMAH_EE_KPACOTOU",
-    "balance": 250000000000.0
+    "balance": 0
   },
   "8138847869": {
     "nick": "Ted ???",
@@ -16118,5 +16118,10 @@
     "nick": "Я клутой",
     "tg_username": "todhx",
     "balance": 100000000000
+  },
+  "6019465056": {
+    "nick": "Хай",
+    "tg_username": "GiveMyOscar",
+    "balance": 0
   }
 }
