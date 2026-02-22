@@ -15177,7 +15177,7 @@
   "8111491449": {
     "nick": "VIP",
     "tg_username": "gojo_satoru1112",
-    "balance": 226000000000
+    "balance": 256000000000
   },
   "8257297562": {
     "nick": "Коука",
@@ -17172,6 +17172,11 @@
   "8411460973": {
     "nick": "Maseru",
     "tg_username": "maserugarant",
+    "balance": 0
+  },
+  "8555316546": {
+    "nick": "Zeka293",
+    "tg_username": "Popamyrovia882",
     "balance": 0
   }
 }
