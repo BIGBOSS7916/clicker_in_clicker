@@ -15407,7 +15407,7 @@
   "6441030671": {
     "nick": "Никки",
     "tg_username": "timalka228",
-    "balance": 425881782128
+    "balance": 435881782128
   },
   "6919242446": {
     "nick": "Каллстрой",
@@ -17808,5 +17808,10 @@
     "nick": "ldospsppspspspspsp",
     "tg_username": "stylimbo",
     "balance": 79225724
+  },
+  "5512960388": {
+    "nick": "владелец",
+    "tg_username": "artynz",
+    "balance": 0
   }
 }
