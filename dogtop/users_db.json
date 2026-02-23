@@ -17782,7 +17782,7 @@
   "8587920900": {
     "nick": "kooooooooo",
     "tg_username": "Hugo_skeup",
-    "balance": 8947368421043
+    "balance": 10000000000000
   },
   "1325882110": {
     "nick": "фармацевт",
@@ -18063,5 +18063,10 @@
     "nick": "Рома",
     "tg_username": "The_Ghost_Frog",
     "balance": 0
+  },
+  "1718056953": {
+    "nick": "Пидрил",
+    "tg_username": "SKWARZER",
+    "balance": 51569558
   }
 }
