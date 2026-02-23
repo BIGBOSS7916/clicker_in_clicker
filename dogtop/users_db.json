@@ -17542,7 +17542,7 @@
   "5381955773": {
     "nick": "Tarent",
     "tg_username": "Uevrb",
-    "balance": 175438596491
+    "balance": 175438596492
   },
   "8339301196": {
     "nick": "сенька",
@@ -17838,5 +17838,10 @@
     "nick": "Fatuous ren",
     "tg_username": "Tron_Ares_Athena",
     "balance": 0
+  },
+  "8522099546": {
+    "nick": "куплет",
+    "tg_username": "clark_night",
+    "balance": 79908862
   }
 }
