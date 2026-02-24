@@ -16907,7 +16907,7 @@
   "6185201978": {
     "nick": "Он",
     "tg_username": "zx_mz_ja",
-    "balance": 9946376832
+    "balance": 30000000000
   },
   "6165997840": {
     "nick": "Zeeeb",
@@ -18177,6 +18177,11 @@
   "6370972415": {
     "nick": "крутой про",
     "tg_username": "PupsWarp",
+    "balance": 0
+  },
+  "7079681885": {
+    "nick": "Molev",
+    "tg_username": "Moloi_Stoper",
     "balance": 0
   }
 }
