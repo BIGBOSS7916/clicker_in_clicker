@@ -18278,5 +18278,10 @@
     "nick": "Forex",
     "tg_username": "FOREX_1570",
     "balance": 30000000000
+  },
+  "6615066100": {
+    "nick": "Писулька",
+    "tg_username": "",
+    "balance": 0
   }
 }
