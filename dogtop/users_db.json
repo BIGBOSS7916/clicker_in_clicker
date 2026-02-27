@@ -7377,7 +7377,7 @@
   "5255608302": {
     "nick": "~♪Evo♪~",
     "tg_username": "E_vo7",
-    "balance": 173210400000000000
+    "balance": 0
   },
   "8159387621": {
     "nick": "Игрок",
@@ -18732,6 +18732,11 @@
   "8309859779": {
     "nick": "чилл",
     "tg_username": "Insakze_involved",
+    "balance": 0
+  },
+  "7752920915": {
+    "nick": "Эпштейн елиф",
+    "tg_username": "not_Elifee",
     "balance": 0
   }
 }
