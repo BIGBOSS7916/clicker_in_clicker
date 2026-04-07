@@ -88,6 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
         lastSyncTime: 0,
         syncInProgress: false
     };
+    let lastAuthError = '';
     
     // --- ЭЛЕМЕНТЫ DOM ---
     const balanceEl = document.getElementById('balance');
@@ -410,6 +411,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             if (!tg || !tg.initData) return null;
             if (!BOT_API_URL || BOT_API_URL === "http://localhost:5000") {
+                lastAuthError = "BOT_API_URL не настроен";
                 console.error("❌ BOT_API_URL не настроен для mini app auth");
                 return null;
             }
@@ -421,14 +423,20 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             if (!response.ok) {
                 const err = await response.text();
+                lastAuthError = `auth ${response.status}: ${err}`;
                 console.error("❌ /api/webapp/auth error:", response.status, err);
                 return null;
             }
             return await response.json();
         } catch (error) {
+            lastAuthError = String(error?.message || error || 'unknown auth error');
             console.error("❌ Ошибка authViaWebAppInitData:", error);
             return null;
         }
+    }
+
+    function isUserAuthorizedForPlay() {
+        return Boolean(userState.isLoggedIn && userState.userId && userState.userId !== 'guest');
     }
     
     // Локальные функции для работы с балансом (с поддержкой API)
@@ -1069,6 +1077,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // --- ОСНОВНОЙ СПИН ---
     async function spin() {
+        if (STRICT_REMOTE_BALANCE && !isUserAuthorizedForPlay()) {
+            showNotification('сначала авторизуйся в mini app');
+            return;
+        }
         if (state.inBonus || state.bonusActive) return;
         if (state.balance < state.bet) {
             showNotification('Недостаточно средств!');
@@ -1192,6 +1204,10 @@ document.addEventListener('DOMContentLoaded', function() {
     spinBtn.onclick = () => spin();
     
     autospinBtn.onclick = () => {
+        if (STRICT_REMOTE_BALANCE && !isUserAuthorizedForPlay()) {
+            showNotification('сначала авторизуйся в mini app');
+            return;
+        }
         if (state.inBonus || state.bonusActive) return;
         
         if (state.autospinActive) {
@@ -1207,6 +1223,10 @@ document.addEventListener('DOMContentLoaded', function() {
         renderBet();
     };
     buybonusBtn.onclick = () => {
+        if (STRICT_REMOTE_BALANCE && !isUserAuthorizedForPlay()) {
+            showNotification('сначала авторизуйся в mini app');
+            return;
+        }
         if (state.inBonus || state.bonusActive) return;
         let price = state.bet * BONUS_BUY_MULTIPLIER;
         if (state.balance < price) {
@@ -1510,8 +1530,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 userState.userNick = null;
                 state.balance = 0;
                 renderBalance();
-                showNotification('не удалось авторизоваться в mini app');
+                const reason = lastAuthError ? ` (${lastAuthError})` : '';
+                showNotification(`не удалось авторизоваться в mini app${reason}`);
                 console.error('❌ strict remote mode: guest login disabled');
+                spinBtn.disabled = true;
+                autospinBtn.disabled = true;
+                buybonusBtn.disabled = true;
                 return;
             }
             userState.isLoggedIn = true;
