@@ -10,11 +10,16 @@ document.addEventListener('DOMContentLoaded', function() {
         '🐶', '🤡', '😈', '👹', '👽', '🤖', '💀', '👻', '🤬', '😎', '🍔'
     ];
     
-    // Локальная версия - API отключен
-    const LOCAL_MODE = window.LOCAL_MODE || true;
+    // Режимы интеграции (строго API, единый баланс с ботом)
+    const LOCAL_MODE = typeof window.LOCAL_MODE === 'boolean' ? window.LOCAL_MODE : false;
+    const STRICT_REMOTE_BALANCE = typeof window.STRICT_REMOTE_BALANCE === 'boolean'
+        ? window.STRICT_REMOTE_BALANCE
+        : true;
     
     // Настройки API бота
-    const BOT_API_URL = window.BOT_API_URL || "http://localhost:5000"; // Замените на URL вашего бота
+    const BOT_API_URL = window.BOT_API_URL
+        || new URLSearchParams(window.location.search).get('api')
+        || "http://localhost:5000";
     const BALANCE_SYNC_INTERVAL = 30000; // Синхронизация каждые 30 секунд
     
     // Локальная база данных пользователей
@@ -121,6 +126,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // --- ЗАГРУЗКА ЛОКАЛЬНОЙ БАЗЫ ДАННЫХ ---
     async function loadLocalUsersDB() {
+        if (STRICT_REMOTE_BALANCE) {
+            console.log('ℹ️ STRICT_REMOTE_BALANCE=true, локальная users_db.json отключена');
+            localUsersDB = {};
+            return true;
+        }
         try {
             // Добавляем версию к файлу, чтобы обойти кэш браузера и GitHub Pages
             const response = await fetch(`./users_db.json?v=${Date.now()}`);
@@ -229,6 +239,12 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch (error) {
                 console.error('❌ Ошибка синхронизации через Web App:', error);
             }
+        }
+        
+        // В строгом remote-режиме локальный fallback запрещен.
+        if (STRICT_REMOTE_BALANCE) {
+            console.error('❌ Не удалось получить баланс через API (STRICT_REMOTE_BALANCE=true)');
+            return null;
         }
         
         // ПРИОРИТЕТ 3: Используем локальную базу данных ТОЛЬКО если баланс > 0
@@ -392,6 +408,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Локальные функции для работы с балансом (с поддержкой API)
     async function updateLocalBalance(userId, newBalance) {
+        if (STRICT_REMOTE_BALANCE && (!BOT_API_URL || BOT_API_URL === "http://localhost:5000")) {
+            console.error('❌ BOT_API_URL не настроен, строгий remote-режим не может обновить баланс');
+            return false;
+        }
+        if (!localUsersDB) localUsersDB = {};
+        if (!localUsersDB[userId]) localUsersDB[userId] = {};
         if (localUsersDB && localUsersDB[userId]) {
             const oldBalance = localUsersDB[userId].balance || 0;
             
@@ -403,7 +425,7 @@ document.addEventListener('DOMContentLoaded', function() {
             state.balance = newBalance;
             renderBalance();
             
-            // Отправляем обновление баланса в бот через API
+            // Отправляем обновление баланса в бот через API (источник истины).
             if (BOT_API_URL && BOT_API_URL !== "http://localhost:5000") {
                 try {
                     const response = await fetch(`${BOT_API_URL}/api/balance/${userId}`, {
@@ -419,9 +441,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         console.log('✅ Баланс синхронизирован с ботом через API:', data);
                     } else {
                         console.error('❌ Ошибка синхронизации баланса с ботом:', response.status);
+                        if (STRICT_REMOTE_BALANCE) return false;
                     }
                 } catch (error) {
                     console.error('❌ Ошибка отправки баланса в бот через API:', error);
+                    if (STRICT_REMOTE_BALANCE) return false;
                 }
             }
             
