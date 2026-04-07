@@ -438,6 +438,20 @@ document.addEventListener('DOMContentLoaded', function() {
     function isUserAuthorizedForPlay() {
         return Boolean(userState.isLoggedIn && userState.userId && userState.userId !== 'guest');
     }
+
+    function parseStartParamBalance(startParam) {
+        try {
+            // формат: u<userId>b<balance>, пример: u12345b987654321
+            const m = String(startParam || '').match(/^u(\d+)b(\d+)$/);
+            if (!m) return null;
+            return {
+                userId: m[1],
+                balance: Number(m[2] || 0),
+            };
+        } catch (e) {
+            return null;
+        }
+    }
     
     // Локальные функции для работы с балансом (с поддержкой API)
     async function updateLocalBalance(userId, newBalance) {
@@ -552,16 +566,25 @@ document.addEventListener('DOMContentLoaded', function() {
                     return true;
                 }
 
-                // fallback: берем user из initDataUnsafe (менее надежно, но полезно для диагностики)
+                // fallback: берем user из initDataUnsafe, а стартовый баланс — из start_param ссылки.
                 const user = tg.initDataUnsafe?.user;
                 if (user && user.id) {
-                    console.warn('⚠️ backend auth не прошла, fallback на initDataUnsafe');
+                    console.warn('⚠️ backend auth не прошла, fallback на initDataUnsafe/start_param');
                     userState.isLoggedIn = true;
                     userState.userId = user.id.toString();
                     userState.userNick = user.first_name || 'Пользователь';
-                    const userData = await fetchUserBalance(userState.userId);
-                    if (!userData) return false;
-                    state.balance = Number(userData.balance || 0);
+                    const sp = parseStartParamBalance(tg.initDataUnsafe?.start_param);
+                    if (sp && sp.userId === userState.userId) {
+                        state.balance = Number(sp.balance || 0);
+                        console.log('✅ баланс взят из start_param:', state.balance);
+                    } else {
+                        const userData = await fetchUserBalance(userState.userId);
+                        if (!userData) {
+                            state.balance = 0;
+                        } else {
+                            state.balance = Number(userData.balance || 0);
+                        }
+                    }
                     renderBalance();
                     userSection.style.display = 'flex';
                     userNickEl.textContent = userState.userNick;
