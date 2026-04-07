@@ -405,6 +405,31 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     }
+
+    async function authViaWebAppInitData(tg) {
+        try {
+            if (!tg || !tg.initData) return null;
+            if (!BOT_API_URL || BOT_API_URL === "http://localhost:5000") {
+                console.error("❌ BOT_API_URL не настроен для mini app auth");
+                return null;
+            }
+            const response = await fetch(`${BOT_API_URL}/api/webapp/auth`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ initData: tg.initData }),
+                cache: "no-cache",
+            });
+            if (!response.ok) {
+                const err = await response.text();
+                console.error("❌ /api/webapp/auth error:", response.status, err);
+                return null;
+            }
+            return await response.json();
+        } catch (error) {
+            console.error("❌ Ошибка authViaWebAppInitData:", error);
+            return null;
+        }
+    }
     
     // Локальные функции для работы с балансом (с поддержкой API)
     async function updateLocalBalance(userId, newBalance) {
@@ -505,47 +530,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 tg.ready();
                 tg.expand();
                 
-                // Получаем данные пользователя из Telegram
+                // приоритет: авторизация через backend валидацию initData
+                const authData = await authViaWebAppInitData(tg);
+                if (authData && authData.ok && authData.user_id) {
+                    userState.isLoggedIn = true;
+                    userState.userId = String(authData.user_id);
+                    userState.userNick = authData.nick || 'Пользователь';
+                    state.balance = Number(authData.balance || 0);
+                    renderBalance();
+                    userSection.style.display = 'flex';
+                    userNickEl.textContent = userState.userNick;
+                    console.log('✅ mini app auth ok, user:', userState.userId, 'balance:', state.balance);
+                    return true;
+                }
+
+                // fallback: берем user из initDataUnsafe (менее надежно, но полезно для диагностики)
                 const user = tg.initDataUnsafe?.user;
                 if (user && user.id) {
-                    console.log('User data found:', user);
-                    console.log('User ID:', user.id);
-                    
-                    // Автоматически устанавливаем пользователя
+                    console.warn('⚠️ backend auth не прошла, fallback на initDataUnsafe');
                     userState.isLoggedIn = true;
                     userState.userId = user.id.toString();
                     userState.userNick = user.first_name || 'Пользователь';
-                    
-                    // Загружаем реальный баланс пользователя
-                    try {
-                        console.log('🔍 Загружаем баланс для пользователя:', userState.userId);
-                        const userData = await fetchUserBalance(userState.userId);
-                        state.balance = userData.balance;
-                        renderBalance();
-                        console.log('✅ Баланс загружен из базы данных:', userData.balance);
-                        console.log('✅ Баланс отформатирован:', formatNumber(userData.balance));
-                        console.log('👤 Пользователь:', userData.nick);
-                        
-                        // Принудительно синхронизируем баланс с бота на сайт
-                        await syncBalanceFromBot(userState.userId);
-                    } catch (error) {
-                        console.error('❌ Ошибка загрузки баланса:', error);
-                        // Если произошла ошибка, используем данные из fetchUserBalance
-                        const userData = await fetchUserBalance(userState.userId);
-                        state.balance = userData.balance;
-                        renderBalance();
-                        console.log('⚠️ Используем данные из fetchUserBalance, баланс:', userData.balance);
-                        
-                        // Принудительно синхронизируем баланс с бота на сайт
-                        await syncBalanceFromBot(userState.userId);
-                    }
-                    
-                    // Обновляем UI
+                    const userData = await fetchUserBalance(userState.userId);
+                    if (!userData) return false;
+                    state.balance = Number(userData.balance || 0);
+                    renderBalance();
                     userSection.style.display = 'flex';
                     userNickEl.textContent = userState.userNick;
-                    
-                        console.log('Автоматический вход успешен');
-                        return true;
+                    return true;
                 } else {
                     console.log('Данные пользователя не найдены в Telegram Web App');
                     // Пробуем получить ID из initData
@@ -1492,6 +1504,16 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Если автоматический вход не удался, показываем пользователя по умолчанию
         if (!telegramLoginSuccess) {
+            if (STRICT_REMOTE_BALANCE) {
+                userState.isLoggedIn = false;
+                userState.userId = null;
+                userState.userNick = null;
+                state.balance = 0;
+                renderBalance();
+                showNotification('не удалось авторизоваться в mini app');
+                console.error('❌ strict remote mode: guest login disabled');
+                return;
+            }
             userState.isLoggedIn = true;
             userState.userId = 'guest';
             userState.userNick = 'Гость';
