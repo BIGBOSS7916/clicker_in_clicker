@@ -455,10 +455,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Локальные функции для работы с балансом (с поддержкой API)
     async function updateLocalBalance(userId, newBalance) {
-        if (STRICT_REMOTE_BALANCE && (!BOT_API_URL || BOT_API_URL === "http://localhost:5000")) {
-            console.error('❌ BOT_API_URL не настроен, строгий remote-режим не может обновить баланс');
-            return false;
-        }
         if (!localUsersDB) localUsersDB = {};
         if (!localUsersDB[userId]) localUsersDB[userId] = {};
         if (localUsersDB && localUsersDB[userId]) {
@@ -488,11 +484,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         console.log('✅ Баланс синхронизирован с ботом через API:', data);
                     } else {
                         console.error('❌ Ошибка синхронизации баланса с ботом:', response.status);
-                        if (STRICT_REMOTE_BALANCE) return false;
                     }
                 } catch (error) {
                     console.error('❌ Ошибка отправки баланса в бот через API:', error);
-                    if (STRICT_REMOTE_BALANCE) return false;
                 }
             }
             
