@@ -459,6 +459,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!localUsersDB[userId]) localUsersDB[userId] = {};
         if (localUsersDB && localUsersDB[userId]) {
             const oldBalance = localUsersDB[userId].balance || 0;
+            let apiSynced = false;
             
             // Обновляем баланс в локальной базе данных
             localUsersDB[userId].balance = newBalance;
@@ -482,12 +483,47 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (response.ok) {
                         const data = await response.json();
                         console.log('✅ Баланс синхронизирован с ботом через API:', data);
+                        const serverBalance = Number(data.new_balance ?? newBalance);
+                        localUsersDB[userId].balance = serverBalance;
+                        state.balance = serverBalance;
+                        renderBalance();
+                        apiSynced = true;
                     } else {
-                        console.error('❌ Ошибка синхронизации баланса с ботом:', response.status);
+                        const errorText = await response.text().catch(() => '');
+                        console.error('❌ Ошибка синхронизации баланса с ботом:', response.status, errorText);
+                        showNotification('баланс не синхронизировался с ботом');
+                        const apiBalance = await fetchBalanceFromAPI(userId);
+                        if (apiBalance && apiBalance.balance !== undefined) {
+                            localUsersDB[userId].balance = apiBalance.balance;
+                            state.balance = apiBalance.balance;
+                            renderBalance();
+                        } else {
+                            localUsersDB[userId].balance = oldBalance;
+                            state.balance = oldBalance;
+                            renderBalance();
+                        }
+                        return false;
                     }
                 } catch (error) {
                     console.error('❌ Ошибка отправки баланса в бот через API:', error);
+                    showNotification('нет связи с ботом, баланс возвращён');
+                    const apiBalance = await fetchBalanceFromAPI(userId);
+                    if (apiBalance && apiBalance.balance !== undefined) {
+                        localUsersDB[userId].balance = apiBalance.balance;
+                        state.balance = apiBalance.balance;
+                    } else {
+                        localUsersDB[userId].balance = oldBalance;
+                        state.balance = oldBalance;
+                    }
+                    renderBalance();
+                    return false;
                 }
+            } else if (STRICT_REMOTE_BALANCE) {
+                console.error('❌ BOT_API_URL не настроен, strict remote balance cannot sync');
+                localUsersDB[userId].balance = oldBalance;
+                state.balance = oldBalance;
+                renderBalance();
+                return false;
             }
             
             // Отправляем обновление баланса в Telegram Web App
@@ -507,7 +543,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.warn('⚠️ Telegram Web App не доступен для отправки данных');
             }
             
-            return true;
+            return !STRICT_REMOTE_BALANCE || apiSynced;
         }
         console.error('❌ Пользователь не найден в локальной базе данных:', userId);
         return false;
@@ -1070,7 +1106,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Обновляем локальный баланс
             if (userState.isLoggedIn) {
-                await updateLocalBalance(userState.userId, state.balance);
+                const bonusSynced = await updateLocalBalance(userState.userId, state.balance);
+                if (!bonusSynced && state.autospinActive) {
+                    stopAutospin();
+                }
             }
             
             // Показываем выигрышные линии через некоторое время
@@ -1111,7 +1150,13 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Обновляем локальный баланс (включает renderBalance)
         if (userState.isLoggedIn) {
-            await updateLocalBalance(userState.userId, state.balance);
+            const debitSynced = await updateLocalBalance(userState.userId, state.balance);
+            if (!debitSynced) {
+                if (state.autospinActive) {
+                    stopAutospin();
+                }
+                return;
+            }
         } else {
             renderBalance();
         }
@@ -1148,7 +1193,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Обновляем локальный баланс (включает renderBalance)
                 if (userState.isLoggedIn) {
-                    await updateLocalBalance(userState.userId, state.balance);
+                    const winSynced = await updateLocalBalance(userState.userId, state.balance);
+                    if (!winSynced && state.autospinActive) {
+                        stopAutospin();
+                    }
                 } else {
                     renderBalance();
                 }
@@ -1174,7 +1222,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Обновляем локальный баланс (включает renderBalance)
             if (userState.isLoggedIn) {
-                await updateLocalBalance(userState.userId, state.balance);
+                const resultSynced = await updateLocalBalance(userState.userId, state.balance);
+                if (!resultSynced && state.autospinActive) {
+                    stopAutospin();
+                }
             } else {
                 renderBalance();
             }
@@ -1239,7 +1290,7 @@ document.addEventListener('DOMContentLoaded', function() {
         state.bet = Math.min(state.balance, MAX_BET);
         renderBet();
     };
-    buybonusBtn.onclick = () => {
+    buybonusBtn.onclick = async () => {
         if (STRICT_REMOTE_BALANCE && !isUserAuthorizedForPlay()) {
             showNotification('сначала авторизуйся в mini app');
             return;
@@ -1258,7 +1309,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         state.balance -= price;
         state.win = 0;
-        renderAll();
+        if (userState.isLoggedIn) {
+            const bonusBuySynced = await updateLocalBalance(userState.userId, state.balance);
+            if (!bonusBuySynced) {
+                return;
+            }
+        } else {
+            renderAll();
+        }
         setTimeout(startBonus, 800);
     };
     betMinusBtn.onclick = () => {
