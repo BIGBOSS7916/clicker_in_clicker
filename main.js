@@ -85,6 +85,8 @@ document.addEventListener('DOMContentLoaded', function() {
         isLoggedIn: false,
         userId: null,
         userNick: null,
+        slotToken: null,
+        slotExp: null,
         lastSyncTime: 0,
         syncInProgress: false
     };
@@ -149,8 +151,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- ФУНКЦИИ ДЛЯ РАБОТЫ С API БОТА ---
     async function fetchBalanceFromAPI(userId) {
         try {
-            console.log(`🔍 Запрос баланса через API: ${BOT_API_URL}/api/balance/${userId}`);
-            const response = await fetch(`${BOT_API_URL}/api/balance/${userId}`, {
+            const qs = new URLSearchParams();
+            if (userState.slotToken && userState.slotExp && String(userState.userId || userId) === String(userId)) {
+                qs.set('slot_token', userState.slotToken);
+                qs.set('slot_exp', userState.slotExp);
+            }
+            const url = `${BOT_API_URL}/api/balance/${userId}${qs.toString() ? `?${qs.toString()}` : ''}`;
+            console.log(`🔍 Запрос баланса через API: ${url}`);
+            const response = await fetch(url, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -415,10 +423,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error("❌ BOT_API_URL не настроен для mini app auth");
                 return null;
             }
+            const sp = parseStartParamBalance(tg.initDataUnsafe?.start_param);
+            if (sp && sp.slotToken && sp.slotExp) {
+                userState.slotToken = sp.slotToken;
+                userState.slotExp = sp.slotExp;
+            }
             const response = await fetch(`${BOT_API_URL}/api/webapp/auth`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ initData: tg.initData }),
+                body: JSON.stringify({
+                    initData: tg.initData,
+                    slotToken: sp?.slotToken || null,
+                    slotExp: sp?.slotExp || null
+                }),
                 cache: "no-cache",
             });
             if (!response.ok) {
@@ -441,12 +458,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function parseStartParamBalance(startParam) {
         try {
-            // формат: u<userId>b<balance>, пример: u12345b987654321
-            const m = String(startParam || '').match(/^u(\d+)b(\d+)$/);
+            // формат: u<userId>b<balance>x<exp>s<token>; старый u<userId>b<balance> тоже поддерживается.
+            const m = String(startParam || '').match(/^u(\d+)b(\d+)(?:x(\d+)s([a-f0-9]{32}))?$/i);
             if (!m) return null;
             return {
                 userId: m[1],
                 balance: Number(m[2] || 0),
+                slotExp: m[3] || null,
+                slotToken: m[4] || null,
             };
         } catch (e) {
             return null;
@@ -477,7 +496,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         headers: {
                             'Content-Type': 'application/json',
                         },
-                        body: JSON.stringify({ balance: newBalance })
+                        body: JSON.stringify({
+                            balance: newBalance,
+                            slotToken: userState.slotToken,
+                            slotExp: userState.slotExp
+                        })
                     });
                     
                     if (response.ok) {
@@ -605,6 +628,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     userState.userNick = user.first_name || 'Пользователь';
                     const sp = parseStartParamBalance(tg.initDataUnsafe?.start_param);
                     if (sp && sp.userId === userState.userId) {
+                        userState.slotExp = sp.slotExp || userState.slotExp;
+                        userState.slotToken = sp.slotToken || userState.slotToken;
                         state.balance = Number(sp.balance || 0);
                         console.log('✅ баланс взят из start_param:', state.balance);
                     } else {
