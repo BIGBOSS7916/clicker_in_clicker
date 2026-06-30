@@ -149,8 +149,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // --- ФУНКЦИИ ДЛЯ РАБОТЫ С API БОТА ---
+    function apiBlockedByMixedContent() {
+        return window.location.protocol === 'https:' && /^http:\/\//i.test(BOT_API_URL || '');
+    }
+
+    function explainApiBlocked() {
+        return apiBlockedByMixedContent() ? 'нужен https api бота' : 'нет связи с api бота';
+    }
+
     async function fetchBalanceFromAPI(userId) {
         try {
+            if (apiBlockedByMixedContent()) {
+                console.error('❌ github pages работает по https, а api бота указан по http. браузер заблокирует синхронизацию.');
+                return null;
+            }
+
             const qs = new URLSearchParams();
             if (userState.slotToken && userState.slotExp && String(userState.userId || userId) === String(userId)) {
                 qs.set('slot_token', userState.slotToken);
@@ -187,6 +200,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     async function fetchAllBalancesFromAPI() {
         try {
+            if (apiBlockedByMixedContent()) {
+                console.error('❌ github pages работает по https, а api бота указан по http. браузер заблокирует синхронизацию.');
+                return null;
+            }
+
             console.log(`🔍 Запрос всех балансов через API: ${BOT_API_URL}/api/balances/all`);
             const response = await fetch(`${BOT_API_URL}/api/balances/all`, {
                 method: 'GET',
@@ -310,27 +328,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     return true;
                 }
             }
-            
-            // Отправляем запрос на синхронизацию баланса через Telegram Web App
-            if (window.Telegram && window.Telegram.WebApp) {
-                const tg = window.Telegram.WebApp;
-                
-                // Отправляем данные в бот для синхронизации
-                const syncData = {
-                    type: 'sync_balance_from_bot',
-                    userId: userId,
-                    timestamp: Date.now()
-                };
-                
-                try {
-                    tg.sendData(JSON.stringify(syncData));
-                    console.log('📤 Запрос синхронизации отправлен в бот:', syncData);
-                } catch (error) {
-                    console.error('❌ Ошибка отправки запроса синхронизации:', error);
-                }
-            }
-            
-            return true;
+
+            console.error('❌ Баланс не синхронизировался с ботом:', explainApiBlocked());
+            return false;
         } catch (error) {
             console.error('❌ Ошибка синхронизации баланса с бота:', error);
             return false;
@@ -340,22 +340,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Функция для периодической синхронизации всех балансов
     async function syncAllBalances() {
         try {
+            if (apiBlockedByMixedContent()) {
+                console.error('❌ Синхронизация невозможна: github pages работает по https, а api бота указан по http.');
+                return;
+            }
+
             if (!BOT_API_URL || BOT_API_URL === "http://localhost:5000") {
-                // Если API не настроен, используем синхронизацию через Telegram Web App
-                if (window.Telegram && window.Telegram.WebApp && userState.isLoggedIn) {
-                    console.log('🔄 Запрашиваем баланс через Telegram Web App...');
-                    const syncData = {
-                        type: 'sync_balance_from_bot',
-                        userId: userState.userId,
-                        timestamp: Date.now()
-                    };
-                    try {
-                        window.Telegram.WebApp.sendData(JSON.stringify(syncData));
-                        console.log('📤 Запрос синхронизации отправлен через Telegram Web App');
-                    } catch (error) {
-                        console.error('❌ Ошибка отправки запроса через Telegram Web App:', error);
-                    }
-                }
+                console.error('❌ BOT_API_URL не настроен, синхронизация баланса невозможна.');
                 return;
             }
             
@@ -380,38 +371,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 console.log('✅ Все балансы синхронизированы через API');
             } else {
-                // Если API недоступен, используем Telegram Web App
-                if (window.Telegram && window.Telegram.WebApp && userState.isLoggedIn) {
-                    console.log('⚠️ API недоступен, используем Telegram Web App для синхронизации');
-                    const syncData = {
-                        type: 'sync_balance_from_bot',
-                        userId: userState.userId,
-                        timestamp: Date.now()
-                    };
-                    try {
-                        window.Telegram.WebApp.sendData(JSON.stringify(syncData));
-                        console.log('📤 Запрос синхронизации отправлен через Telegram Web App');
-                    } catch (error) {
-                        console.error('❌ Ошибка отправки запроса через Telegram Web App:', error);
-                    }
-                }
+                console.error('❌ API недоступен, синхронизация баланса не выполнена.');
             }
         } catch (error) {
             console.error('❌ Ошибка синхронизации всех балансов:', error);
-            // Fallback на Telegram Web App
-            if (window.Telegram && window.Telegram.WebApp && userState.isLoggedIn) {
-                try {
-                    const syncData = {
-                        type: 'sync_balance_from_bot',
-                        userId: userState.userId,
-                        timestamp: Date.now()
-                    };
-                    window.Telegram.WebApp.sendData(JSON.stringify(syncData));
-                    console.log('📤 Fallback: запрос отправлен через Telegram Web App');
-                } catch (e) {
-                    console.error('❌ Ошибка fallback синхронизации:', e);
-                }
-            }
         }
     }
 
@@ -421,6 +384,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!BOT_API_URL || BOT_API_URL === "http://localhost:5000") {
                 lastAuthError = "BOT_API_URL не настроен";
                 console.error("❌ BOT_API_URL не настроен для mini app auth");
+                return null;
+            }
+            if (apiBlockedByMixedContent()) {
+                lastAuthError = "нужен https api бота";
+                console.error("❌ mini app открыт по https, а api бота указан по http");
                 return null;
             }
             const sp = parseStartParamBalance(tg.initDataUnsafe?.start_param);
@@ -479,6 +447,15 @@ document.addEventListener('DOMContentLoaded', function() {
         if (localUsersDB && localUsersDB[userId]) {
             const oldBalance = localUsersDB[userId].balance || 0;
             let apiSynced = false;
+
+            if (apiBlockedByMixedContent()) {
+                console.error('❌ Баланс не синхронизировался с ботом:', explainApiBlocked());
+                showNotification(explainApiBlocked());
+                localUsersDB[userId].balance = oldBalance;
+                state.balance = oldBalance;
+                renderBalance();
+                return false;
+            }
             
             // Обновляем баланс в локальной базе данных
             localUsersDB[userId].balance = newBalance;
@@ -543,29 +520,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } else if (STRICT_REMOTE_BALANCE) {
                 console.error('❌ BOT_API_URL не настроен, strict remote balance cannot sync');
+                showNotification('api бота не настроен');
                 localUsersDB[userId].balance = oldBalance;
                 state.balance = oldBalance;
                 renderBalance();
                 return false;
             }
-            
-            // Отправляем обновление баланса в Telegram Web App
-            if (window.Telegram && window.Telegram.WebApp) {
-                try {
-                    const data = {
-                        type: 'balance_update',
-                        userId: userId,
-                        balance: newBalance
-                    };
-                    window.Telegram.WebApp.sendData(JSON.stringify(data));
-                    console.log('📤 Баланс отправлен в Telegram Web App:', data);
-                } catch (error) {
-                    console.error('❌ Ошибка отправки баланса в Telegram:', error);
-                }
-            } else {
-                console.warn('⚠️ Telegram Web App не доступен для отправки данных');
-            }
-            
+
             return !STRICT_REMOTE_BALANCE || apiSynced;
         }
         console.error('❌ Пользователь не найден в локальной базе данных:', userId);
@@ -617,6 +578,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     userNickEl.textContent = userState.userNick;
                     console.log('✅ mini app auth ok, user:', userState.userId, 'balance:', state.balance);
                     return true;
+                }
+
+                if (STRICT_REMOTE_BALANCE && lastAuthError) {
+                    showNotification(`не удалось авторизоваться в mini app (${lastAuthError})`);
+                    console.error('❌ backend auth не прошла, fallback отключён в strict remote balance:', lastAuthError);
+                    return false;
                 }
 
                 // fallback: берем user из initDataUnsafe, а стартовый баланс — из start_param ссылки.
@@ -1132,8 +1099,11 @@ document.addEventListener('DOMContentLoaded', function() {
             // Обновляем локальный баланс
             if (userState.isLoggedIn) {
                 const bonusSynced = await updateLocalBalance(userState.userId, state.balance);
-                if (!bonusSynced && state.autospinActive) {
-                    stopAutospin();
+                if (!bonusSynced) {
+                    if (state.autospinActive) {
+                        stopAutospin();
+                    }
+                    return;
                 }
             }
             
@@ -1219,8 +1189,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Обновляем локальный баланс (включает renderBalance)
                 if (userState.isLoggedIn) {
                     const winSynced = await updateLocalBalance(userState.userId, state.balance);
-                    if (!winSynced && state.autospinActive) {
-                        stopAutospin();
+                    if (!winSynced) {
+                        if (state.autospinActive) {
+                            stopAutospin();
+                        }
+                        return;
                     }
                 } else {
                     renderBalance();
@@ -1248,8 +1221,11 @@ document.addEventListener('DOMContentLoaded', function() {
             // Обновляем локальный баланс (включает renderBalance)
             if (userState.isLoggedIn) {
                 const resultSynced = await updateLocalBalance(userState.userId, state.balance);
-                if (!resultSynced && state.autospinActive) {
-                    stopAutospin();
+                if (!resultSynced) {
+                    if (state.autospinActive) {
+                        stopAutospin();
+                    }
+                    return;
                 }
             } else {
                 renderBalance();
@@ -1664,9 +1640,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('📥 MainButton clicked');
             });
             
-            // Обработчик для получения данных от бота через sendData
-            // Telegram Web App может получать данные через специальные события
-            // Но основная синхронизация идет через периодические запросы
+            // Синхронизация баланса идет только через API бота.
         }
         
         // Запускаем периодическую синхронизацию балансов
